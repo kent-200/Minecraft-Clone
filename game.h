@@ -11,6 +11,8 @@
 #include <vector>
 #include <array>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 
 extern const char *stbi_failure_reason(void);
 extern void stbi_image_free(void *ptr);
@@ -87,7 +89,7 @@ class Triangle {
 public:
     Vec3d point[3];
     Vec3d normal;
-    float color[4] = {0, 0, 0, 0};
+    Vec3d color = Vec3d(0, 0, 0, 0);
 
     Triangle() {}
 
@@ -95,6 +97,17 @@ public:
         point[0] = p1;
         point[1] = p2;
         point[2] = p3;
+        normal = (p2 - p1).cross(p3 - p1).normalize();
+    }
+
+    Triangle(Vec3d p1, Vec3d p2, Vec3d p3, Vec3d col) {
+        point[0] = p1;
+        point[1] = p2;
+        point[2] = p3;
+        //set col
+        color = col;
+
+        //do normal
         normal = (p2 - p1).cross(p3 - p1).normalize();
     }
 };
@@ -112,9 +125,9 @@ public:
         triangles[1] = t2;
     }
 
-    void getTriangles(std::vector<Triangle> & tris, float x, float y, float z) {
-        tris.push_back(Triangle(triangles[0].point[0] + Vec3d(x, y, z), triangles[0].point[1] + Vec3d(x, y, z), triangles[0].point[2] + Vec3d(x, y, z)));
-        tris.push_back(Triangle(triangles[1].point[0] + Vec3d(x, y, z), triangles[1].point[1] + Vec3d(x, y, z), triangles[1].point[2] + Vec3d(x, y, z)));
+    void getTriangles(std::vector<Triangle> & tris, Vec3d relativePos, Vec3d color) {
+        tris.push_back(Triangle(triangles[1].point[0] + relativePos, triangles[1].point[1] + relativePos, triangles[1].point[2] + relativePos, color));
+        tris.push_back(Triangle(triangles[0].point[0] + relativePos, triangles[0].point[1] + relativePos, triangles[0].point[2] + relativePos, color));
     }
 
 
@@ -158,6 +171,7 @@ public:
     Vec3d position = {0, 0, 0};
     float pitch = 0;
     float yaw = 0;
+    Vec3d lookAt = {0, 0, 1};
 };
 
 
@@ -207,8 +221,8 @@ class Renderer {
     //block size
     void addFaces(float bs){
         // using clockwise ordering for vertices, later normalisation
-        faces.push_back(CubeFace("front", Triangle(Vec3d(0, 0, 0), Vec3d(0, bs, 0), Vec3d(bs, 0, 0)), Triangle(Vec3d(0, bs, 0), Vec3d(bs, bs, 0), Vec3d(bs, 0, 0))));
-        faces.push_back(CubeFace("back", Triangle(Vec3d(bs, 0, bs), Vec3d(0, 0, bs), Vec3d(0, bs, bs)), Triangle(Vec3d(bs, 0, bs), Vec3d(0, bs, bs), Vec3d(bs, bs, bs))));
+        faces.push_back(CubeFace("front", Triangle(Vec3d(bs, 0, bs), Vec3d(0, bs, bs), Vec3d(0, 0, bs)), Triangle(Vec3d(bs, 0, bs), Vec3d(bs, bs, bs), Vec3d(0, bs, bs))));
+        faces.push_back(CubeFace("back", Triangle(Vec3d(0, 0, 0), Vec3d(0, bs, 0), Vec3d(bs, 0, 0)), Triangle(Vec3d(0, bs, 0), Vec3d(bs, bs, 0), Vec3d(bs, 0, 0))));
         faces.push_back(CubeFace("left", Triangle(Vec3d(0, 0, 0), Vec3d(0, 0, bs), Vec3d(0, bs, bs)), Triangle(Vec3d(0, 0, 0), Vec3d(0, bs, bs), Vec3d(0, bs, 0))));
         faces.push_back(CubeFace("right", Triangle(Vec3d(bs, 0, 0), Vec3d(bs, bs, 0), Vec3d(bs, 0, bs)), Triangle(Vec3d(bs, 0, bs), Vec3d(bs, bs, 0), Vec3d(bs, bs, bs))));
         faces.push_back(CubeFace("top", Triangle(Vec3d(bs, bs, 0), Vec3d(0, bs, 0), Vec3d(0, bs, bs)), Triangle(Vec3d(bs, bs, 0), Vec3d(0, bs, bs), Vec3d(bs, bs, bs))));
@@ -219,6 +233,109 @@ class Renderer {
         cubeTypes.push_back(CubeType(Vec3d(0, 0, 0), Vec3d(1, 0, 0, 1), Vec3d(0, 1, 0, 1), Vec3d(0, 0, 1, 1), Vec3d(1, 1, 0, 1), Vec3d(0, 1, 1, 1), Vec3d(1, 0, 1, 1)));
     }
 
+    glm::mat4 getProjectionMatrix(float yaw, float pitch, float fov, float aspectRatio, float nearPlane, float farPlane) {
+        // convert fov to radians
+        float fovRad = 1.0f / tanf(fov * 0.5f / 180.0f * 3.14159f);
+
+        // calculate sin and cos of yaw and pitch
+        float cosYaw = cos(yaw);
+        float sinYaw = sin(yaw);
+        float cosPitch = cos(pitch);
+        float sinPitch = sin(pitch);
+
+        // // apply pitch yaw rotation
+        // glm::mat4 rotationMatrix = {
+        //     cosYaw, 0, -sinYaw, 0,
+        //     sinPitch * sinYaw, cosPitch, sinPitch * cosYaw, 0,
+        //     cosPitch * sinYaw, -sinPitch, cosPitch * cosYaw, 0,
+        //     0, 0, 0, 1
+        // };
+
+        // glm::mat4 viewMatrix = glm::mat4(1.0f);
+
+        float yawRadians = yaw * 3.14159f / 180.0f;
+        float pitchRadians = pitch * 3.14159f / 180.0f;
+
+        // viewMatrix = glm::rotate(viewMatrix, yawRadians, glm::vec3(0.0f, 1.0f, 0.0f));   // Rotate around Y-axis (yaw)
+        // viewMatrix = glm::rotate(viewMatrix, pitchRadians, glm::vec3(1.0f, 0.0f, 0.0f)); // Rotate around X-axis (pitch)
+
+        // create projection matrix
+        glm::mat4 projectionMatrix = {
+            aspectRatio * fovRad, 0.0f, 0.0f, 0.0f,
+            0.0f, fovRad, 0.0f, 0.0f,
+            0.0f, 0.0f, (farPlane) / (farPlane - nearPlane), 1.0f,
+            0.0f, 0.0f, (-farPlane * nearPlane) / (farPlane - nearPlane), 0.0f
+        };
+
+
+        // apply rotation to projection matrix
+        return projectionMatrix;
+
+    }
+
+
+    glm::mat4 makeRotationX(float angleRad){
+        return glm::mat4(
+            1, 0, 0, 0,
+            0, cos(angleRad), sin(angleRad), 0,
+            0, -sin(angleRad), cos(angleRad), 0,
+            0, 0, 0, 1
+        );
+    }
+
+    glm::mat4 makeRotationY(float angleRad){
+        return glm::mat4(
+            cos(angleRad), 0, sin(angleRad), 0,
+            0, 1, 0, 0,
+            -sin(angleRad), 0, cos(angleRad), 0,
+            0, 0, 0, 1
+        );
+    }
+
+    glm::mat4 makeRotationZ(float angleRad){
+        return glm::mat4(
+            cos(angleRad), sin(angleRad), 0, 0,
+            -sin(angleRad), cos(angleRad), 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1
+        );
+    }
+
+    glm::mat4 makeTranslation(float x, float y, float z){
+        return glm::mat4(
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            x, y, z, 1
+        );
+    }
+
+    glm::mat4 matrixPointAt(Vec3d pos, Vec3d target, Vec3d up){
+        // Calculate new forward direction
+        Vec3d newForward = target - pos;
+        newForward = newForward.normalize();
+
+        // Calculate new Up direction
+        Vec3d a = newForward * up.dot(newForward);
+        Vec3d newUp = up - a;
+        newUp = newUp.normalize();
+
+        // New Right direction is easy, its just cross product
+        Vec3d newRight = newUp.cross(newForward);
+
+        // Construct Dimensioning and Translation Matrix
+        glm::mat4 matrix = {
+            newRight.x, newRight.y, newRight.z, 0,
+            newUp.x, newUp.y, newUp.z, 0,
+            newForward.x, newForward.y, newForward.z, 0,
+            pos.x, pos.y, pos.z, 1
+        };
+
+        return matrix;
+    }
+
+
+
     void renderIndivTri(GLFWwindow * window, GLint & color_loc, GLuint & vao, GLuint & shader_programme, int pointStart, int pointNum, float color[4]){
         // Draw triangle (color)
         glUniform4fv(color_loc, 1, color);
@@ -227,42 +344,33 @@ class Renderer {
     }
 
 
-    glm::mat4 getProjectionMatrix(float yaw, float pitch, float fov, float aspectRatio, float nearPlane, float farPlane) {
-        // convert fov to radians
-        float fovRad = fov * 3.14159265358979323846 / 180.0;
-
-        // calculate focal length
-        float f = 1.0 / tan(fovRad / 2.0);
-
-        // calculate aspect ratio corrected fov
-        float arFov = aspectRatio * f;
-
-        // calculate sin and cos of yaw and pitch
-        float cosYaw = cos(yaw);
-        float sinYaw = sin(yaw);
-        float cosPitch = cos(pitch);
-        float sinPitch = sin(pitch);
-
-        // create projection matrix
-        glm::mat4 projectionMatrix = {
-            arFov, 0, 0, 0,
-            0, f, 0, 0,
-            0, 0, (farPlane + nearPlane) / (nearPlane - farPlane), -1,
-            0, 0, (2 * farPlane * nearPlane) / (nearPlane - farPlane), 0
-        };
-
-        return projectionMatrix;
-    }
-
-
+  
     
-    void triangleRender(GLFWwindow * window, std::vector<float> & points, std::vector<Vec3d> & colours){        
+    void renderAll(GLFWwindow * window, std::vector<float> & points, std::vector<Vec3d> & colours){        
+        // Enable lighting
+        // glEnable(GL_LIGHTING);
+        // glEnable(GL_LIGHT0);
+
+        // // Set material properties
+        // GLfloat ambientColor[] = {0.2f, 0.2f, 0.2f, 1.0f};
+        // GLfloat diffuseColor[] = {0.8f, 0.8f, 0.8f, 1.0f};
+        // GLfloat specularColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
+        // GLfloat shininess = 32.0f;
+
+        // glMaterialfv(GL_FRONT, GL_AMBIENT, ambientColor);
+        // glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuseColor);
+        // glMaterialfv(GL_FRONT, GL_SPECULAR, specularColor);
+        // glMaterialf(GL_FRONT, GL_SHININESS, shininess);
+
+        // // Set light position
+        // GLfloat lightPosition[] = {1.0f, 1.0f, 1.0f, 0.0f}; // Directional light from top-right
+        // glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
         //print colours
-        std::cout << "start2\n";
-        for(int i = 0; i < colours.size(); i++){
-            std::cout << "x: " << colours[i].x << " y: " << colours[i].y << " z: " << colours[i].z << std::endl;
-        }
-        std::cout << "end2\n";
+        // std::cout << "start2\n";
+        // for(int i = 0; i < colours.size(); i++){
+        //     std::cout << "x: " << colours[i].x << " y: " << colours[i].y << " z: " << colours[i].z << std::endl;
+        // }
+        // std::cout << "end2\n";
 
 
         // Bind VBO and update vertex data
@@ -296,16 +404,14 @@ class Renderer {
 
         glBindVertexArray(0);
 
-        
+        // Disable lighting after rendering
+        // glDisable(GL_LIGHTING);
     }
 
     //triangles and face colours
-    void getCubeData(std::vector<Triangle> & tris, std::vector<Vec3d> & colors, int face, Vec3d pos, int type_id){
+    void getCubeData(std::vector<Triangle> & tris, int face, Vec3d pos, int type_id){
         //iterate through faces - adds 2 triangles
-        faces[face].getTriangles(tris, pos.x, pos.y, pos.z);
-        //add twice for 2 trianges
-        colors.push_back(cubeTypes[type_id].color[face]);
-        colors.push_back(cubeTypes[type_id].color[face]);
+        faces[face].getTriangles(tris, pos, cubeTypes[type_id].color[face]);
     }
 
 
@@ -374,8 +480,36 @@ public:
         // aspect ratio
         float aspectRatio = 800.0f / 600.0f;
 
+        //rotation matricies
+        float yawRadians = camera.yaw * 3.14159f / 180.0f;
+        float pitchRadians = camera.pitch * 3.14159f / 180.0f;
+
+        glm::mat4 matRotz = makeRotationZ(yawRadians);
+        glm::mat4 matRotx = makeRotationX(pitchRadians);
+
+        glm::mat4 matTrans = makeTranslation(0.0f, 0.0f, 0.0f);
+
+        glm::mat4 matWorld = glm::identity<glm::mat4>();
+        matWorld = matRotz * matRotx;
+        matWorld = matWorld * matTrans;
+
+        // camera shit
+        Vec3d vUp(0, 1, 0);
+        Vec3d vTarget(0, 0, 1);
+        glm::mat4 matCameraRot = makeRotationY(yawRadians);
+        glm::vec4 lookDir = matCameraRot * glm::vec4(vTarget.x, vTarget.y, vTarget.z, vTarget.w);
+        camera.lookAt = Vec3d(lookDir.x, lookDir.y, lookDir.z, lookDir.w);
+        vTarget = camera.position + camera.lookAt;
+
+
+
+        glm::mat4 matCamera = matrixPointAt(camera.position, vTarget, vUp);
+        glm::mat4 matView = glm::inverse(matCamera);
+
+
+
         // projection matrix
-        glm::mat4 projectionMatrix = getProjectionMatrix(camera.yaw, camera.pitch, 90.0f, aspectRatio, 0.1f, 100.0f);
+        glm::mat4 projectionMatrix = getProjectionMatrix(yawRadians, pitchRadians, 90.0f, aspectRatio, 0.1f, 100.0f);
 
 
         // caclulate points for drawing cube
@@ -383,52 +517,31 @@ public:
         for (int cube_index = 0; cube_index < cubes.size(); cube_index++) {
             // get data- triangles and colours
             std::vector<Triangle> tris;
-            //one colour per triangle
-            std::vector<Vec3d> colors;
 
             //get relative block positon
-            Vec3d pos = cubes[cube_index].position - camera.position;
+            Vec3d relative_pos = cubes[cube_index].position - camera.position;
 
-            // check if cube is in view with dot product
-            if (pos.dot(camera.position) < 0) {
-                continue;
-            }
-
-            // only draw the faces that are visible
+            
             //currently based on players current position, will update to using normals
 
-            if(pos.z > 0){
-                getCubeData(tris, colors, 0, pos, cubes[cube_index].type_id); //front
-            } else if(pos.z < 0){
-                getCubeData(tris, colors, 1, pos, cubes[cube_index].type_id); //back
-            }
+            //get translated triangles for each face
+            getCubeData(tris, 0, relative_pos, cubes[cube_index].type_id); //front
+            getCubeData(tris, 1, relative_pos, cubes[cube_index].type_id); //back
+            
 
-            if(pos.x > 0){
-                getCubeData(tris, colors, 2, pos, cubes[cube_index].type_id); //left
-            } else if(pos.x < 0){
-                getCubeData(tris, colors, 3, pos, cubes[cube_index].type_id); //right
-            }
+            getCubeData(tris, 2, relative_pos, cubes[cube_index].type_id); //left
+            getCubeData(tris, 3, relative_pos, cubes[cube_index].type_id); //right
 
-            if(pos.y > 0){
-                getCubeData(tris, colors, 4, pos, cubes[cube_index].type_id); //top
-            } else if(pos.y < 0){
-                getCubeData(tris, colors, 5, pos, cubes[cube_index].type_id); //bottom
-            }
-
-            //print colours
-            std::cout << "start\n";
-            for(int i = 0; i < colors.size(); i++){
-                std::cout << "x: " << colors[i].x << " y: " << colors[i].y << " z: " << colors[i].z << std::endl;
-            }
-            std::cout << "end\n";
-
+            getCubeData(tris, 4, relative_pos, cubes[cube_index].type_id); //top
+            getCubeData(tris, 5, relative_pos, cubes[cube_index].type_id); //bottoms
+        
+             
 
             //dont bother drawing block if no faces are on screen
 
             // add to all points and colours
             // for all triangles
             for(int tri_index = 0; tri_index < tris.size(); tri_index++){
-                bool drawTri = false;
                 
                 //point 1, 2, and 3
                 
@@ -439,41 +552,61 @@ public:
                 glm::vec4 projected_point_2 = projectionMatrix * glm::vec4(tris[tri_index].point[1].x, tris[tri_index].point[1].y, tris[tri_index].point[1].z, tris[tri_index].point[1].w);
                 glm::vec4 projected_point_3 = projectionMatrix * glm::vec4(tris[tri_index].point[2].x, tris[tri_index].point[2].y, tris[tri_index].point[2].z, tris[tri_index].point[2].w);
 
-                //project to 2d
-                //point 1,2,3
-                //normalise with gl
-                vertex[0].x = (projected_point_1.x / -projected_point_1.w) * 0.5 + 0.5;
-                vertex[0].y = (projected_point_1.y / -projected_point_1.w) * 0.5 + 0.5;
-                if(vertex[0].x > -1 && vertex[0].x < 1 && vertex[0].y > -1 && vertex[0].y < 1){
-                    drawTri = true;
-                }
+                
+                // //normal calculation
+                glm::vec4 line1 = projected_point_2 - projected_point_1;
+                glm::vec4 line2 = projected_point_3 - projected_point_1;
+                glm::vec3 normal = glm::normalize(glm::cross(glm::vec3(line1), glm::vec3(line2)));
 
-                vertex[1].x = (projected_point_2.x / -projected_point_2.w) * 0.5 + 0.5;
-                vertex[1].y = (projected_point_2.y / -projected_point_2.w) * 0.5 + 0.5;
-                if(vertex[1].x > -1 && vertex[1].x < 1 && vertex[1].y > 0 && vertex[1].y < 1){
-                    drawTri = true;
-                }
+                // check if normal is facing camera
+                glm::vec4 relCamera = projected_point_1 - glm::vec4(camera.position.x, camera.position.y, camera.position.z, 1.0f);
+                if(glm::dot(glm::vec3(normal), glm::vec3(relCamera)) < 0){                  
+                    // render only if normal is facing camera
 
-                vertex[2].x = (projected_point_3.x / -projected_point_3.w) * 0.5 + 0.5;
-                vertex[2].y = (projected_point_3.y / -projected_point_3.w) * 0.5 + 0.5;
-                if(vertex[2].x > -1 && vertex[2].x < 1 && vertex[2].y > -1 && vertex[2].y < 1){
-                    drawTri = true;
-                }
-                // save to a points array to be drawn later
+                    //moved to shader renderAll function
+                    //Ilumination
+                    // glm::vec3 lightDir = glm::normalize(glm::vec3(0.0f, 0.0f, -1.0f));
+                    // float intensity = glm::dot(normal, lightDir);
 
-                //print all points
-                // for(int i = 0; i < 3; i++){
-                //     std::cout << "x: " << vertex[i].x << " y: " << vertex[i].y << std::endl;
-                // }
+                    // std::cout << intensity << std::endl;
 
-                if(drawTri){
+
+                    //matview for camera stuff
+                    glm::vec4 view_point_1 = matView * projected_point_1;
+                    glm::vec4 view_point_2 = matView * projected_point_2;
+                    glm::vec4 view_point_3 = matView * projected_point_3;
+                    
+                    
+                    //project to 2d
+                    //point 1,2,3
+                    //normalise with gl
+                    vertex[0].x = (view_point_1.x / -view_point_1.w) * 0.5 + 0.5;
+                    vertex[0].y = (view_point_1.y / -view_point_1.w) * 0.5 + 0.5;
+
+
+                    vertex[1].x = (view_point_2.x / -view_point_2.w) * 0.5 + 0.5;
+                    vertex[1].y = (view_point_2.y / -view_point_2.w) * 0.5 + 0.5;
+
+
+                    vertex[2].x = (view_point_3.x / -view_point_3.w) * 0.5 + 0.5;
+                    vertex[2].y = (view_point_3.y / -view_point_3.w) * 0.5 + 0.5;
+
+                    //print all points
+                    // for(int i = 0; i < 3; i++){
+                    //     std::cout << "x: " << vertex[i].x << " y: " << vertex[i].y << std::endl;
+                    // }
+
+                    
                     for(int i = 0; i < 3; i++){
                         allPoints.push_back(vertex[i].x);
                         allPoints.push_back(vertex[i].y);
                         allPoints.push_back(0.0f);
                     }
-                     allColors.push_back(colors[tri_index]);
+                    //apply intensity to colour
+
+                    allColors.push_back(tris[tri_index].color);
                 }
+                
             }
 
             //triangle ready to be drawn by a drawing function
@@ -481,7 +614,7 @@ public:
 
         // Draw triangles from allPoints and allColors
 
-        triangleRender(window, allPoints, allColors);       
+        renderAll(window, allPoints, allColors);       
     }
 
     ~Renderer() {
@@ -576,35 +709,36 @@ public:
 
             // Handle key inputs
             float moveAmount = 0.005;
+            Vec3d vForward = camera.lookAt.normalize();
             if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-                camera.position.z -= moveAmount;
+                camera.position = camera.position + vForward * moveAmount;
             } else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-                camera.position.z += moveAmount;
+                camera.position = camera.position - vForward * moveAmount;
             } else if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-                camera.position.x -= moveAmount;
-            } else if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
                 camera.position.x += moveAmount;
+            } else if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+                camera.position.x -= moveAmount;
             } else if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-                camera.position.y += moveAmount;
-            } else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
                 camera.position.y -= moveAmount;
+            } else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+                camera.position.y += moveAmount;
             }
 
             //handle mouse inputs
             double mouseX, mouseY;
             glfwGetCursorPos(window, &mouseX, &mouseY);
             // adjust yaw after full rotation using mod
-            camera.yaw += (mouseX - oldMouseX) * 0.001;
-            if (camera.yaw > 3.14) camera.yaw -= 6.28;
-            if (camera.yaw < -3.14) camera.yaw += 6.28;
+            camera.yaw += (mouseX - oldMouseX) * 0.5;
+            // if (camera.yaw > 3.14) camera.yaw -= 6.28;
+            // if (camera.yaw < -3.14) camera.yaw += 6.28;
             
 
             // limit pitch to avoid gimbal lock
-            camera.pitch += (mouseY - oldMouseY) * 0.005;
-            if (camera.pitch > 1.57) camera.pitch = 1.57;
-            if (camera.pitch < -1.57) camera.pitch = -1.57;
+            camera.pitch += (mouseY - oldMouseY) * 0.5;
+            //stop pitch from going too high or low
+            // if (camera.pitch > 1.57) camera.pitch = 1.57;
+            // if (camera.pitch < -1.57) camera.pitch = -1.57;
 
-           // std::cout << "yaw: " << camera.yaw << " pitch: " << camera.pitch << std::endl;
 
             oldMouseX = mouseX;
             oldMouseY = mouseY;
