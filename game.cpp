@@ -338,7 +338,6 @@ public:
         tris.push_back(Triangle(triangles[0].point[0] + relativePos, triangles[0].point[1] + relativePos, triangles[0].point[2] + relativePos, color));
     }
 
-
 };
 
 
@@ -599,7 +598,7 @@ class Renderer {
 
   
     
-    void renderAll(GLFWwindow * window, std::vector<std::array<float, 9>> & points, std::vector<std::array<float, 3>> & colours){        
+    void renderAll(GLFWwindow * window, std::vector<float> & drawPoints, std::vector<std::array<float, 3>> & colours){        
         // Enable lighting
         // glEnable(GL_LIGHTING);
         // glEnable(GL_LIGHT0);
@@ -626,18 +625,18 @@ class Renderer {
         // std::cout << "end2\n";
 
         //put points into single array
-        std::vector<float> drawPoints;
-        for(int i = 0; i < points.size(); i++){
-            for(int j = 0; j < 9; j++){
-                drawPoints.push_back(points[i][j]);
-            }
-        }
+        // std::vector<float> drawPoints;
+        // for(int i = 0; i < (int) points.size(); i++){
+        //     for(int j = 0; j < 9; j++){
+        //         drawPoints.push_back(points[i][j]);
+        //     }
+        // }
 
 
         // Bind VBO and update vertex data
         // load all triangle points into VBO
         glBindBuffer(GL_ARRAY_BUFFER, triVBO);
-        if (!points.empty()) {
+        if (!drawPoints.empty()) {
             glBufferData(GL_ARRAY_BUFFER, drawPoints.size() * sizeof(float), drawPoints.data(), GL_DYNAMIC_DRAW);
         }
             
@@ -654,7 +653,7 @@ class Renderer {
 
         // draw triangles from array
 
-        for(int i = 0; i < colours.size(); i++){
+        for(int i = 0; i < (int) colours.size(); i++){
             renderIndivTri(window, color_loc, triVAO, triShaderProgram, i * 3, 3, colours[i]);
         }
 
@@ -729,8 +728,6 @@ public:
     }
 
 
-
-
     void render_process(GLFWwindow * window, Camera camera, float fElapsedTime){
         // Fill the triangles to draw
         for (auto cube : mesh.cubes){
@@ -739,13 +736,23 @@ public:
             }
         }
 
-        // Render triangles as 3D
+		std::vector<std::array<float, 3>> coloursToDraw;
+		std::vector<float> drawPoints;
 
-        Render3D(window, camera, fElapsedTime);
+        // Render triangles as 3D
+        Render3D(window, camera, coloursToDraw, drawPoints);
+
+		// Render triangles as 2D
+		renderAll(window, drawPoints, coloursToDraw);
+
+		drawPoints.clear();
+		coloursToDraw.clear();
+		mesh.tris.clear();
+
     }
 
 
-    bool Render3D(GLFWwindow * window, Camera camera, float fElapsedTime){
+    bool Render3D(GLFWwindow * window, Camera camera, std::vector<std::array<float, 3>> & coloursToDraw, std::vector<float> & drawPoints){
 		//camera.printCord();
 		Mat4 matWorld = Mat4::makeIdentity();	// Form World Matrix
 
@@ -754,8 +761,7 @@ public:
 
 		// Store triagles for rastering later
 		std::vector<Triangle> vecTrianglesToClip;
-		std::vector<std::array<float, 9>> trianglesToDraw;
-		std::vector<std::array<float, 3>> coloursToDraw;
+		
 
 		// Draw Triangles
 		for (auto tri : mesh.tris){
@@ -902,15 +908,18 @@ public:
 					t.point[i].y = (t.point[i].y / (windowHeight / 2)) - 1;					
 				}
 
-				std::array<float, 9> point{t.point[0].x, t.point[0].y, 0.0f, t.point[1].x, t.point[1].y, 0.0f, t.point[2].x, t.point[2].y, 0.0f};
-				trianglesToDraw.push_back(point);
+	
+				//trianglesToDraw.push_back(point);
+				for(int i = 0; i < 3; i++){
+					drawPoints.push_back(t.point[i].x);
+					drawPoints.push_back(t.point[i].y);
+					drawPoints.push_back(0.0f);
+				}
+
                 std::array<float, 3> color{t.col.x, t.col.y, t.col.z};
 				coloursToDraw.push_back(color);				
 			}
 		}
-
-
-		renderAll(window, trianglesToDraw, coloursToDraw);
 
 		return true;
 	}
@@ -938,7 +947,7 @@ private:
     GLFWwindow* window;
     Renderer renderer;  
     int winWidth, winHeight; 
-    Camera camera = Camera(Vec3d(0, 0, 0));
+    Camera camera = Camera(Vec3d(0, 0, -5));
 
     
 
@@ -949,9 +958,6 @@ public:
     Game(int winWidth, int winHeight) {
         this->winWidth = winWidth;
         this->winHeight = winHeight;
-
-		camera.keySensitive = 5.0f;
-		camera.mouseSensitivity = 0.5f;
         
 
         // Initialize GLFW
@@ -1010,6 +1016,10 @@ public:
 
 
     void run(){
+		//sensitivity
+		camera.keySensitive = 5.0f;
+		camera.mouseSensitivity = 2.0f;
+
         // timing
         auto tp1 = std::chrono::system_clock::now();
 		auto tp2 = std::chrono::system_clock::now();
@@ -1065,8 +1075,8 @@ public:
 
             // Update Title Bar
             fps_update++;
-            if (fps_update > 50){
-                double average_fps = 50.0f / fps_elapsed_time;
+            if (fps_update > 25){
+                double average_fps = 25.0f / fps_elapsed_time;
                 // Update window title with FPS
                 std::string windowTitle = "GLFW game engine - FPS: " + std::to_string(average_fps);
                 glfwSetWindowTitle(window, windowTitle.c_str());
