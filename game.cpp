@@ -672,6 +672,15 @@ public:
         
     }
 
+	const char * getAtlasImage(){
+		return atlas_image;
+	}
+
+	const char * getAtlasMeta(){
+		return atlas_meta;
+	}
+
+
     bool projectionInit(int windowWidth, int windowHeight){
         this->windowWidth = windowWidth;
         this->windowHeight = windowHeight;
@@ -926,7 +935,6 @@ public:
 
 
 
-
     ~Renderer() {
         //clean up
         glDeleteVertexArrays(1, &triVAO);
@@ -1003,7 +1011,7 @@ public:
         // initialize shader for triangles
         renderer.objectShaderInit();
 
-        // init_text_rendering (atlas_image, atlas_meta, winWidth, winHeight);
+        // init_text_rendering (renderer.getAtlasImage(), renderer.getAtlasMeta(), winWidth, winHeight);
         // int hello_id = add_text (
         //     "Hello world!",
         //     -0.9f, 0.5f, 35.0f, 0.5f, 0.5f, 1.0f, 1.0f);
