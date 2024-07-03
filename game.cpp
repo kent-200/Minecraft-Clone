@@ -1,4 +1,5 @@
 #include "game.h"
+#include "RenderTextureFile.h"
 
 // g++ -o run game.cpp text.cpp -lglfw3 -lkernel32 -lopengl32 -lglu32 -lglew32 
 
@@ -61,7 +62,7 @@ class Vec3d{
 class Triangle {
 public:
 	Vec3d point[3];
-	Vec3d col;
+	textureRef col;
 
     Triangle() = default;
 
@@ -69,10 +70,11 @@ public:
         point[0] = p0;
         point[1] = p1;
         point[2] = p2;
+		col = textureRef(0, 0, false);
     }
 
 
-    Triangle(Vec3d p0, Vec3d p1, Vec3d p2, Vec3d col) {
+    Triangle(Vec3d p0, Vec3d p1, Vec3d p2, textureRef col) {
         point[0] = p0;
         point[1] = p1;
         point[2] = p2;
@@ -333,9 +335,9 @@ public:
         triangles[1] = t2;
     }
 
-    void getTriangles(std::vector<Triangle> & tris, Vec3d relativePos, Vec3d color) {
-        tris.push_back(Triangle(triangles[1].point[0] + relativePos, triangles[1].point[1] + relativePos, triangles[1].point[2] + relativePos, color));
-        tris.push_back(Triangle(triangles[0].point[0] + relativePos, triangles[0].point[1] + relativePos, triangles[0].point[2] + relativePos, color));
+    void getTriangles(std::vector<Triangle> & tris, Vec3d relativePos, textureRef color) {
+        tris.push_back(Triangle(triangles[1].point[0] + relativePos, triangles[1].point[1] + relativePos, triangles[1].point[2] + relativePos, textureRef(color.x, color.y, true)));
+        tris.push_back(Triangle(triangles[0].point[0] + relativePos, triangles[0].point[1] + relativePos, triangles[0].point[2] + relativePos, textureRef(color.x, color.y, false)));
     }
 
 };
@@ -343,15 +345,15 @@ public:
 
 class CubeType {
     public:
-    Vec3d color[6];
+    textureRef texture[6];
 
-    CubeType(Vec3d cfront, Vec3d cback, Vec3d cleft, Vec3d cright, Vec3d ctop, Vec3d cbottom){
-        color[0] = cfront;
-        color[1] = cback;
-        color[2] = cleft;
-        color[3] = cright;
-        color[4] = ctop;
-        color[5] = cbottom;
+    CubeType(textureRef cfront, textureRef cback, textureRef cleft, textureRef cright, textureRef ctop, textureRef cbottom){
+        texture[0] = cfront;
+        texture[1] = cback;
+        texture[2] = cleft;
+        texture[3] = cright;
+        texture[4] = ctop;
+        texture[5] = cbottom;
     }
 };
 
@@ -392,10 +394,11 @@ private:
 
 
     void addTypes(){
-        cubeTypes.push_back(CubeType(Vec3d(1, 0, 0, 1), Vec3d(0, 1, 0, 1), Vec3d(0, 0, 1, 1), Vec3d(1, 1, 0, 1), Vec3d(0, 1, 1, 1), Vec3d(1, 0, 1, 1)));
-		//grey cube, top light, side middle, bottom dark
-		cubeTypes.push_back(CubeType(Vec3d(0.7, 0.7, 0.7, 1), Vec3d(0.7, 0.7, 0.7, 1), Vec3d(0.6, 0.6, 0.6, 1), Vec3d(0.6, 0.6, 0.6, 1), Vec3d(0.8, 0.8, 0.8, 1), Vec3d(0.2, 0.2, 0.2, 1)));
-
+		//grass
+        cubeTypes.push_back(CubeType(textureRef(1, 0, false), textureRef(1, 0, false), textureRef(1, 0, false), textureRef(1, 0, false), textureRef(0, 0, false), textureRef(2, 0, false)));
+		
+		//wood
+        cubeTypes.push_back(CubeType(textureRef(2, 1, false), textureRef(2, 1, false), textureRef(2, 1, false), textureRef(2, 1, false), textureRef(3, 1, false), textureRef(3, 1, false)));
     }
 
 public:
@@ -422,7 +425,7 @@ public:
     //triangles and face colours
     void getCubeData(std::vector<Triangle> & tris, int face, Vec3d pos, int type_id){
         //iterate through faces - adds 2 triangles
-        faces[face].getTriangles(tris, pos, cubeTypes[type_id].color[face]);
+        faces[face].getTriangles(tris, pos, cubeTypes[type_id].texture[face]);
     }
 
 
@@ -546,10 +549,9 @@ public:
 
 
 class Renderer {
-    //shader variables for triangles
-    GLuint triShaderProgram;
-    GLuint triVAO, triVBO, triEBO;
-    GLuint triTexture;   
+	//Render texture file class 
+	RenderTextureFile * renderTexture;
+
 
     //text
     const char* atlas_image = "DS-DIGI-atlas.png";
@@ -567,110 +569,25 @@ class Renderer {
 
     //projection matrix
     //rotation matrix
-
-    const char* vertex_shader = R"(
-        #version 330 core
-        layout (location = 0) in vec3 vp;
-        void main() {
-            gl_Position = vec4(vp, 1.0);
-        }
-    )";
-    
-    const char* fragment_shader = R"(
-        #version 330 core
-        out vec4 frag_color;
-        uniform vec4 u_color;
-        void main() {
-            frag_color = u_color;
-        }
-    )";
-
    
-
-
-    void renderIndivTri(GLFWwindow * window, GLint & color_loc, GLuint & vao, GLuint & shader_programme, int pointStart, int pointNum, std::array<float, 3> color){
-        // Draw triangle (color)
-        glUniform4fv(color_loc, 1, &color[0]);
-        glBindVertexArray(vao);
-        glDrawArrays(GL_TRIANGLES, pointStart, pointNum);
-    }
-
 
   
     
-    void renderAll(GLFWwindow * window, std::vector<float> & drawPoints, std::vector<std::array<float, 3>> & colours){        
-        // Enable lighting
-        // glEnable(GL_LIGHTING);
-        // glEnable(GL_LIGHT0);
+    void renderAll(GLFWwindow * window, std::vector<float> & drawPoints, std::vector<textureRef> & tex){        
 
-        // // Set material properties
-        // GLfloat ambientColor[] = {0.2f, 0.2f, 0.2f, 1.0f};
-        // GLfloat diffuseColor[] = {0.8f, 0.8f, 0.8f, 1.0f};
-        // GLfloat specularColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
-        // GLfloat shininess = 32.0f;
-
-        // glMaterialfv(GL_FRONT, GL_AMBIENT, ambientColor);
-        // glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuseColor);
-        // glMaterialfv(GL_FRONT, GL_SPECULAR, specularColor);
-        // glMaterialf(GL_FRONT, GL_SHININESS, shininess);
-
-        // // Set light position
-        // GLfloat lightPosition[] = {1.0f, 1.0f, 1.0f, 0.0f}; // Directional light from top-right
-        // glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
-        //print colours
-        // std::cout << "start2\n";
-        // for(int i = 0; i < colours.size(); i++){
-        //     std::cout << "x: " << colours[i].x << " y: " << colours[i].y << " z: " << colours[i].z << std::endl;
-        // }
-        // std::cout << "end2\n";
-
-        //put points into single array
-        // std::vector<float> drawPoints;
-        // for(int i = 0; i < (int) points.size(); i++){
-        //     for(int j = 0; j < 9; j++){
-        //         drawPoints.push_back(points[i][j]);
-        //     }
-        // }
-
-
-        // Bind VBO and update vertex data
-        // load all triangle points into VBO
-        glBindBuffer(GL_ARRAY_BUFFER, triVBO);
-        if (!drawPoints.empty()) {
-            glBufferData(GL_ARRAY_BUFFER, drawPoints.size() * sizeof(float), drawPoints.data(), GL_DYNAMIC_DRAW);
-        }
-            
-        // draw geometry
-        glUseProgram(triShaderProgram);
-
-        // only needs to be checked once
-        GLint color_loc = glGetUniformLocation(triShaderProgram, "u_color");
-        if (color_loc == -1) {
-            std::cerr << "Error: Uniform 'u_color' not found in shader program" << std::endl;
-            exit(0);
-            return;
-        }
-
-        // draw triangles from array
-
-        for(int i = 0; i < (int) colours.size(); i++){
-            renderIndivTri(window, color_loc, triVAO, triShaderProgram, i * 3, 3, colours[i]);
-        }
-
-        glBindVertexArray(0);
-
-        // Disable lighting after rendering
-        // glDisable(GL_LIGHTING);
+        // send to Render texture file 
+		renderTexture->render(window, drawPoints, tex);		
     }
-
-    
-    
 
 
 public:
     Renderer(){
-        
     }
+
+	void renderinit(){
+		renderTexture = new RenderTextureFile("blocks.png", 16, 16);
+		renderTexture->glfwExperimental();
+	}
 
 	const char * getAtlasImage(){
 		return atlas_image;
@@ -690,53 +607,6 @@ public:
     }
 
 
-    void objectShaderInit() {
-        // add some geometry
-        float points[] = {
-            -0.5f, -0.5f,  0.0f,
-                0.5f, -0.5f,  0.0f,
-                0.0f,  0.5f,  0.0f
-        };
-
-        
-        // Create vertex array object (VAO)
-        glGenVertexArrays(1, &triVAO);
-        glBindVertexArray(triVAO);
-
-        // Create vertex buffer object (VBO) for dynamic points
-        glGenBuffers(1, &triVBO);
-        glBindBuffer(GL_ARRAY_BUFFER, triVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_DYNAMIC_DRAW);
-
-        // Define vertex attribute pointer
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-
-
-        // shader for the geometry
-        {
-            
-            GLuint vs = glCreateShader (GL_VERTEX_SHADER);
-            glShaderSource (vs, 1, &vertex_shader, NULL);
-            glCompileShader (vs);
-
-            GLuint fs = glCreateShader (GL_FRAGMENT_SHADER);
-            glShaderSource (fs, 1, &fragment_shader, NULL);
-            glCompileShader (fs);
-
-            triShaderProgram = glCreateProgram ();
-            glAttachShader (triShaderProgram, fs);
-            glAttachShader (triShaderProgram, vs);
-            glLinkProgram (triShaderProgram);
-
-
-            glDeleteShader(vs);
-            glDeleteShader(fs);
-        }
-
-    }
-
-
     void render_process(GLFWwindow * window, Camera camera, float fElapsedTime){
         // Fill the triangles to draw
         for (auto cube : mesh.cubes){
@@ -745,23 +615,23 @@ public:
             }
         }
 
-		std::vector<std::array<float, 3>> coloursToDraw;
+		std::vector<textureRef> textureToDraw;
 		std::vector<float> drawPoints;
 
         // Render triangles as 3D
-        Render3D(window, camera, coloursToDraw, drawPoints);
+        Render3D(window, camera, textureToDraw, drawPoints);
 
 		// Render triangles as 2D
-		renderAll(window, drawPoints, coloursToDraw);
+		renderAll(window, drawPoints, textureToDraw);
 
 		drawPoints.clear();
-		coloursToDraw.clear();
+		textureToDraw.clear();
 		mesh.tris.clear();
 
     }
 
 
-    bool Render3D(GLFWwindow * window, Camera camera, std::vector<std::array<float, 3>> & coloursToDraw, std::vector<float> & drawPoints){
+    bool Render3D(GLFWwindow * window, Camera camera, std::vector<textureRef> & textureToDraw, std::vector<float> & drawPoints){
 		//camera.printCord();
 		Mat4 matWorld = Mat4::makeIdentity();	// Form World Matrix
 
@@ -925,8 +795,8 @@ public:
 					drawPoints.push_back(0.0f);
 				}
 
-                std::array<float, 3> color{t.col.x, t.col.y, t.col.z};
-				coloursToDraw.push_back(color);				
+                // std::array<float, 3> color{t.col.x, t.col.y, t.col.z};
+				textureToDraw.push_back(t.col);				
 			}
 		}
 
@@ -937,10 +807,6 @@ public:
 
     ~Renderer() {
         //clean up
-        glDeleteVertexArrays(1, &triVAO);
-        glDeleteBuffers(1, &triVBO);
-        glDeleteBuffers(1, &triEBO);
-        glDeleteProgram(triShaderProgram);
     }
 
 
@@ -956,10 +822,6 @@ private:
     Renderer renderer;  
     int winWidth, winHeight; 
     Camera camera = Camera(Vec3d(0, 0, -5));
-
-    
-
-    
 
 
 public:
@@ -1009,7 +871,8 @@ public:
 
 
         // initialize shader for triangles
-        renderer.objectShaderInit();
+		renderer.renderinit();
+
 
         // init_text_rendering (renderer.getAtlasImage(), renderer.getAtlasMeta(), winWidth, winHeight);
         // int hello_id = add_text (
