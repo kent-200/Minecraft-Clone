@@ -551,6 +551,7 @@ public:
 class Renderer {
 	//Render texture file class 
 	RenderTextureFile * renderTexture;
+	RenderTextureFile * textTexture;
 
 
     //text
@@ -577,6 +578,25 @@ class Renderer {
 
         // send to Render texture file 
 		renderTexture->render(window, drawPoints, tex);		
+
+		std::vector<float> point1 = {
+			// Positions       // UVs
+			0.1f,  0.1f, 0.0f, // Top Right
+			0.1f, -0.1f, 0.0f,  // Bottom Right
+			-0.1f, -0.1f, 0.0f,  // Bottom Left
+			// Positions       // UVs
+			0.1f,  0.1f, 0.0f,  // Top Right
+			-0.1f, -0.1f, 0.0f,  // Bottom Left
+			-0.1f,  0.1f, 0.0f,    // Top Left
+		};
+
+		std::vector<textureRef> textureCord = {
+			textureRef(2, 2, true),
+			textureRef(2, 2, false)
+		};
+
+
+		textTexture->render(window, point1, textureCord);
     }
 
 
@@ -586,6 +606,7 @@ public:
 
 	void renderinit(){
 		renderTexture = new RenderTextureFile("blocks.png", 16, 16);
+		textTexture = new RenderTextureFile(atlas_image, 16, 14);
 		renderTexture->glfwExperimental();
 	}
 
@@ -930,7 +951,7 @@ public:
 
 
             // Handle Frame Update
-            glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+            glClearColor(0.3f, 0.6f, 0.7f, 1.0f);
             glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             
             // Render the scene
