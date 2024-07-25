@@ -37,23 +37,7 @@ public:
     // if window should close
     bool processKeyboardInput(GLFWwindow * window, float fElapsedTime);
 
-    void processMouseInput(double xoffset, double yoffset, float fElapsedTime){
-        xoffset *= mouseSensitivity;
-        yoffset *= mouseSensitivity;
-
-        fYaw += xoffset * fElapsedTime;
-        fPitch += yoffset * fElapsedTime;
-
-
-        //stop pitch going too high or low
-        if(fPitch > 1.5f){
-            fPitch = 1.5f;
-        }
-
-        if(fPitch < -1.5f){
-            fPitch = -1.5f;
-        }
-    }
+    void processMouseInput(double xoffset, double yoffset, float fElapsedTime);
 
     Vec3d getPos(){
         return pos;
@@ -72,3 +56,75 @@ public:
     }
 
 };
+
+
+bool Camera::processKeyboardInput(GLFWwindow * window, float fElapsedTime){  
+    Vec3d vTarget = { 0,0,1 };
+    Mat4 matRotX = Mat4::makeRotationX(fPitch);
+    Mat4 matRotY = Mat4::makeRotationY(fYaw);
+    Mat4 matCameraRot = matRotX * matRotY;
+    lookDir = matCameraRot * vTarget;
+
+
+    Vec3d vForward = lookDir * (keySensitive * fElapsedTime);
+    Vec3d vRight = { lookDir.z, 0, -lookDir.x };
+    vRight = vRight * (keySensitive * fElapsedTime);
+
+    Vec3d vUp = { 0,1,0 };
+    vUp = vUp * (keySensitive * fElapsedTime);
+
+    // Standard FPS Control scheme, but turn instead of strafe
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
+        pos = pos + vForward;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
+        pos = pos - vForward;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
+        //pan camera left
+        pos = pos + vRight;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
+        //pan camera right
+        pos = pos - vRight;
+    }
+
+    if(glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS){
+        //move camera up
+        pos.y += (fElapsedTime * keySensitive);
+    }
+
+    if(glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
+        //move camera down
+        pos.y -= (fElapsedTime * keySensitive);
+    }
+
+    //escape
+    if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
+        return true;
+    }
+
+    return false;    
+}
+
+
+void Camera::processMouseInput(double xoffset, double yoffset, float fElapsedTime){
+    xoffset *= mouseSensitivity;
+    yoffset *= mouseSensitivity;
+
+    fYaw += xoffset * fElapsedTime;
+    fPitch += yoffset * fElapsedTime;
+
+
+    //stop pitch going too high or low
+    if(fPitch > 1.5f){
+        fPitch = 1.5f;
+    }
+
+    if(fPitch < -1.5f){
+        fPitch = -1.5f;
+    }
+}
