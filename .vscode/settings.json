@@ -56,7 +56,8 @@
         "iomanip": "cpp",
         "span": "cpp",
         "sstream": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "text_encoding": "cpp"
     },
     "C_Cpp.default.compilerPath": "C:\\msys64\\mingw64\\bin\\g++.exe"
 }
