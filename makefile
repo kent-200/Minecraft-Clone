@@ -1,38 +1,38 @@
 # Compiler and compiler flags
 CXX = g++
-CXXFLAGS = -Wall -lglfw3 -lkernel32 -lopengl32 -lglu32 -lglew32 -Werror
+CXXFLAGS = -Wall -Werror
+LDFLAGS = -lglfw3 -lkernel32 -lopengl32 -lglu32 -lglew32
 
-# Source files directory and wildcard for all .cpp files
-SRC_DIR = .
-SRCS = $(wildcard $(SRC_DIR)/*.cpp)
+# Source files directories and wildcard for all .cpp files
+SRC_DIRS = . util
+SRCS = $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.cpp))
 
 # Object files directory and naming
 OBJ_DIR = obj
-OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS))
+OBJS = $(patsubst %,$(OBJ_DIR)/%,$(notdir $(SRCS:.cpp=.o)))
 
 # Executable name
 EXEC = run.exe
 
 # Default target
-all: $(EXEC) run 
+all: $(EXEC) run
 
 # Linking object files into the executable
 $(EXEC): $(OBJS)
-	$(CXX) -o $@ $^ $(CXXFLAGS)
+	$(CXX) -o $@ $^ $(LDFLAGS)
 
 # Compiling each source file into object files
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
+$(OBJ_DIR)/%.o: %.cpp | $(OBJ_DIR)
 	$(CXX) -c -o $@ $< $(CXXFLAGS)
 
 # Create object directory if it doesn't exist
 $(OBJ_DIR):
 	mkdir $(OBJ_DIR)
 
-
-
 # Clean rule to remove compiled files and executable
 clean:
-	rm -rf $(OBJ_DIR) $(EXEC)
+	rm -f $(OBJ_DIR)/*.o
+	rm -f $(EXEC)
 
 # Phony target to run the executable
 run: $(EXEC)
