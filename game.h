@@ -23,6 +23,7 @@
 #include "util/Process3D.h"
 #include "util/block.h"
 #include "util/GLFWRender.h"
+#include "util/chunk.h"
 
 
 

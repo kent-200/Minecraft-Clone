@@ -13,55 +13,17 @@
 
 
 
-class Mesh {
-private:
-    blockAtlas atlas;
-
-    void addTypes(){
-        atlas.addBlock("colour", Vec3d(1, 0, 0, 1), Vec3d(0, 1, 0, 1), Vec3d(0, 0, 1, 1), Vec3d(1, 1, 0, 1), Vec3d(0, 1, 1, 1), Vec3d(1, 0, 1, 1));
-		//grey cube, top light, side middle, bottom dark
-		atlas.addBlock("grey", Vec3d(0.7, 0.7, 0.7, 1), Vec3d(0.7, 0.7, 0.7, 1), Vec3d(0.6, 0.6, 0.6, 1), Vec3d(0.6, 0.6, 0.6, 1), Vec3d(0.8, 0.8, 0.8, 1), Vec3d(0.2, 0.2, 0.2, 1));
-    }
-
-public:
-    std::vector<Block> blocks;
-    std::vector<Triangle> tris;
-    Mesh(){
-        addTypes();
-
-        // add cube
-        blocks.push_back(Block(Vec3d(0, 0, -3), 0));
-		blocks.push_back(Block(Vec3d(2, 2, 0), 1));
-		blocks.push_back(Block(Vec3d(0, 0, -1), 1));
-
-		blocks.push_back(Block(Vec3d(2, 2, 5), 1));
-		blocks.push_back(Block(Vec3d(0, 0, 5), 1));
-
-		blocks.push_back(Block(Vec3d(-2, -2, 0), 1));
-		blocks.push_back(Block(Vec3d(5, 8, -1), 1));
-    }
-
-    //triangles and face colours - all 12 triangles
-    void getCubeData(std::vector<Triangle> & tris, Vec3d pos, int type_id){
-        Block::allRelativeTriangles(tris, pos, atlas.getBlockTextures(type_id));
-    }
-
-};
-
-
-
-
-
 class Renderer {
-    
-
-    //mesh
-    Mesh mesh;
 
 	//3d renderer
 	Process3D process3D;
 
     GLFWRender render;
+
+    blockAtlas atlas;
+
+    Chunk chunk;
+    
 
 
     //projection matrix
@@ -73,22 +35,36 @@ public:
 	void init(int winWidth, int winHeight){
 		process3D.init(winWidth, winHeight);
         render.init();		
+
+        atlas.addBlock("transparent", Vec3d(0, 0, 0));
+
+        //add block to block atlas
+        atlas.addBlock("colour", Vec3d(1, 0, 0, 1), Vec3d(0, 1, 0, 1), Vec3d(0, 0, 1, 1), Vec3d(1, 1, 0, 1), Vec3d(0, 1, 1, 1), Vec3d(1, 0, 1, 1));
+		//grey cube, top light, side middle, bottom dark
+		atlas.addBlock("grey", Vec3d(0.7, 0.7, 0.7, 1), Vec3d(0.7, 0.7, 0.7, 1), Vec3d(0.6, 0.6, 0.6, 1), Vec3d(0.6, 0.6, 0.6, 1), Vec3d(0.8, 0.8, 0.8, 1), Vec3d(0.2, 0.2, 0.2, 1));
+
+        // add blocks to chunk
+        chunk.setRow(0, 0, 0, 16, 1);
+        chunk.setBlock(0, 0, 2, 2);
+
+        chunk.setHorizontalFace(10, 1);
+
+
+        chunk.updateMesh(&atlas);
 	}
 
     
 
 
     void render_process(GLFWwindow * window, Camera camera, float fElapsedTime){
-        // Fill the triangles to draw
-        for (auto cube : mesh.blocks){
-            mesh.getCubeData(mesh.tris, cube.pos, cube.type_id);
-        }
+        
+        // get 3d triangles from chunk
 
 		std::vector<std::array<float, 3>> coloursToDraw;
 		std::vector<float> drawPoints;
 
         // Render triangles as 3D
-		process3D.Render3D(mesh.tris, camera.matView(), camera.getPos(), coloursToDraw, drawPoints);
+		process3D.Render3D(chunk.getMesh(), camera.matView(), camera.getPos(), coloursToDraw, drawPoints);
         // Render3D(window, camera, coloursToDraw, drawPoints);
 
 		// Render triangles as 2D
@@ -96,8 +72,6 @@ public:
 
 		drawPoints.clear();
 		coloursToDraw.clear();
-		mesh.tris.clear();
-
     }
 
 

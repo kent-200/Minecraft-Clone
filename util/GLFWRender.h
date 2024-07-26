@@ -149,7 +149,6 @@ private:
         // draw triangles from array
 
         for(int i = 0; i < (int) colours.size(); i++){
-			colours[i][0] -= 0.02f * i;
             renderIndivTri(window, color_loc, triVAO, triShaderProgram, i * 3, 3, colours[i]);
         }
 
