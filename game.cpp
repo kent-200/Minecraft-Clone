@@ -1,4 +1,5 @@
 #include "game.h"
+#include "RenderTextureFile.h"
 
 // g++ -o run game.cpp text.cpp -lglfw3 -lkernel32 -lopengl32 -lglu32 -lglew32 
 
@@ -161,6 +162,8 @@ public:
         // happen after glfw and glew init 
         renderer.init(winWidth, winHeight);
 
+        
+
 
 
         // init_text_rendering (renderer.getAtlasImage(), renderer.getAtlasMeta(), winWidth, winHeight);
@@ -180,6 +183,8 @@ public:
 		// camera.keySensitive = 5.0f;
 		// camera.mouseSensitivity = 2.0f;
 
+        RenderTextureFile cross = RenderTextureFile("blocks.png", 16, 16);
+
         // timing
         auto tp1 = std::chrono::system_clock::now();
 		auto tp2 = std::chrono::system_clock::now();
@@ -193,6 +198,37 @@ public:
 
 		int fps_update = 0;
 		double fps_elapsed_time = 0.0; 
+
+
+        ////////////////////////////
+         std::vector<float> point1 = {
+            // Positions       // UVs
+            0.1f,  0.1f, 0.0f, // Top Right
+            0.1f, -0.1f, 0.0f,  // Bottom Right
+            -0.1f, -0.1f, 0.0f,  // Bottom Left
+        };
+
+        std::vector<float> point2 = {
+            // Positions       // UVs
+            0.1f,  0.1f, 0.0f,  // Top Right
+            -0.1f, -0.1f, 0.0f,  // Bottom Left
+            -0.1f,  0.1f, 0.0f,    // Top Left
+        };
+
+        std::vector<float> allpoints = point1;
+        allpoints.insert(allpoints.end(), point2.begin(), point2.end());
+
+        std::vector<textureRef> textureCord = {
+            textureRef(3, 1, true),
+            textureRef(3, 1, false)
+        };
+
+        std::vector<textureRef> textureCord2 = {
+            textureRef(1, 1, true),
+            textureRef(1, 1, false)
+        };
+        ////////////////////////////////
+
 
 
         while (!glfwWindowShouldClose(window)) {
@@ -226,8 +262,10 @@ public:
             glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             
             // Render the scene
-            renderer.render_process(window, camera, fElapsedTime);
             //draw_texts();
+
+            //cross.render(window, allpoints, textureCord);
+            renderer.render_process(window, camera, fElapsedTime);
             
 
             // Swap buffers
