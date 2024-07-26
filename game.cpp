@@ -39,18 +39,12 @@ public:
 
 		blocks.push_back(Block(Vec3d(-2, -2, 0), 1));
 		blocks.push_back(Block(Vec3d(5, 8, -1), 1));
-
-
     }
 
-    //triangles and face colours
-    void getCubeData(std::vector<Triangle> & tris, int face, Vec3d pos, int type_id){
-        //iterate through faces - adds 2 triangles
-		Block::faceRelativeTriangles(tris, face, pos, atlas.getBlockTexture(type_id, face));
-        // faces[face].getTriangles(tris, pos, cubeTypes[type_id].color[face]);
+    //triangles and face colours - all 12 triangles
+    void getCubeData(std::vector<Triangle> & tris, Vec3d pos, int type_id){
+        Block::allRelativeTriangles(tris, pos, atlas.getBlockTextures(type_id));
     }
-
-
 
 };
 
@@ -59,10 +53,7 @@ public:
 
 
 class Renderer {
-    //shader variables for triangles
-    GLuint triShaderProgram;
-    GLuint triVAO, triVBO, triEBO;
-    GLuint triTexture;   
+    
 
     //mesh
     Mesh mesh;
@@ -70,169 +61,27 @@ class Renderer {
 	//3d renderer
 	Process3D process3D;
 
+    GLFWRender render;
+
 
     //projection matrix
     //rotation matrix
 
-    const char* vertex_shader = R"(
-        #version 330 core
-        layout (location = 0) in vec3 vp;
-        void main() {
-            gl_Position = vec4(vp, 1.0);
-        }
-    )";
-    
-    const char* fragment_shader = R"(
-        #version 330 core
-        out vec4 frag_color;
-        uniform vec4 u_color;
-        void main() {
-            frag_color = u_color;
-        }
-    )";
-
-   
-
-
-    void renderIndivTri(GLFWwindow * window, GLint & color_loc, GLuint & vao, GLuint & shader_programme, int pointStart, int pointNum, std::array<float, 3> color){
-        // Draw triangle (color)
-        glUniform4fv(color_loc, 1, &color[0]);
-        glBindVertexArray(vao);
-        glDrawArrays(GL_TRIANGLES, pointStart, pointNum);
-    }
-
-
-  
-    
-    void renderAll(GLFWwindow * window, std::vector<float> & drawPoints, std::vector<std::array<float, 3>> & colours){        
-        // Enable lighting
-        // glEnable(GL_LIGHTING);
-        // glEnable(GL_LIGHT0);
-
-        // // Set material properties
-        // GLfloat ambientColor[] = {0.2f, 0.2f, 0.2f, 1.0f};
-        // GLfloat diffuseColor[] = {0.8f, 0.8f, 0.8f, 1.0f};
-        // GLfloat specularColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
-        // GLfloat shininess = 32.0f;
-
-        // glMaterialfv(GL_FRONT, GL_AMBIENT, ambientColor);
-        // glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuseColor);
-        // glMaterialfv(GL_FRONT, GL_SPECULAR, specularColor);
-        // glMaterialf(GL_FRONT, GL_SHININESS, shininess);
-
-        // // Set light position
-        // GLfloat lightPosition[] = {1.0f, 1.0f, 1.0f, 0.0f}; // Directional light from top-right
-        // glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
-        //print colours
-        // std::cout << "start2\n";
-        // for(int i = 0; i < colours.size(); i++){
-        //     std::cout << "x: " << colours[i].x << " y: " << colours[i].y << " z: " << colours[i].z << std::endl;
-        // }
-        // std::cout << "end2\n";
-
-        //put points into single array
-        // std::vector<float> drawPoints;
-        // for(int i = 0; i < (int) points.size(); i++){
-        //     for(int j = 0; j < 9; j++){
-        //         drawPoints.push_back(points[i][j]);
-        //     }
-        // }
-
-
-        // Bind VBO and update vertex data
-        // load all triangle points into VBO
-        glBindBuffer(GL_ARRAY_BUFFER, triVBO);
-        if (!drawPoints.empty()) {
-            glBufferData(GL_ARRAY_BUFFER, drawPoints.size() * sizeof(float), drawPoints.data(), GL_DYNAMIC_DRAW);
-        }
-            
-        // draw geometry
-        glUseProgram(triShaderProgram);
-
-        // only needs to be checked once
-        GLint color_loc = glGetUniformLocation(triShaderProgram, "u_color");
-        if (color_loc == -1) {
-            std::cerr << "Error: Uniform 'u_color' not found in shader program" << std::endl;
-            exit(0);
-            return;
-        }
-
-        // draw triangles from array
-
-        for(int i = 0; i < (int) colours.size(); i++){
-			colours[i][0] -= 0.02f * i;
-            renderIndivTri(window, color_loc, triVAO, triShaderProgram, i * 3, 3, colours[i]);
-        }
-
-        glBindVertexArray(0);
-
-        // Disable lighting after rendering
-        // glDisable(GL_LIGHTING);
-    }
-
-
-
 public:
     Renderer(){}
   
-	bool projectionInit(int winWidth, int winHeight){
+	void init(int winWidth, int winHeight){
 		process3D.init(winWidth, winHeight);
-		return true;
+        render.init();		
 	}
 
-    void objectShaderInit() {
-        // add some geometry
-        float points[] = {
-            -0.5f, -0.5f,  0.0f,
-                0.5f, -0.5f,  0.0f,
-                0.0f,  0.5f,  0.0f
-        };
-
-        
-        // Create vertex array object (VAO)
-        glGenVertexArrays(1, &triVAO);
-        glBindVertexArray(triVAO);
-
-        // Create vertex buffer object (VBO) for dynamic points
-        glGenBuffers(1, &triVBO);
-        glBindBuffer(GL_ARRAY_BUFFER, triVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_DYNAMIC_DRAW);
-
-        // Define vertex attribute pointer
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-
-
-        // shader for the geometry
-        {
-            
-            GLuint vs = glCreateShader (GL_VERTEX_SHADER);
-            glShaderSource (vs, 1, &vertex_shader, NULL);
-            glCompileShader (vs);
-
-            GLuint fs = glCreateShader (GL_FRAGMENT_SHADER);
-            glShaderSource (fs, 1, &fragment_shader, NULL);
-            glCompileShader (fs);
-
-            triShaderProgram = glCreateProgram ();
-            glAttachShader (triShaderProgram, fs);
-            glAttachShader (triShaderProgram, vs);
-            glLinkProgram (triShaderProgram);
-
-
-            glDeleteShader(vs);
-            glDeleteShader(fs);
-        }
-
-    }
+    
 
 
     void render_process(GLFWwindow * window, Camera camera, float fElapsedTime){
         // Fill the triangles to draw
         for (auto cube : mesh.blocks){
-            for (int i = 0; i < 6; i++){
-                mesh.getCubeData(mesh.tris, i, cube.pos, cube.type_id);
-            }
+            mesh.getCubeData(mesh.tris, cube.pos, cube.type_id);
         }
 
 		std::vector<std::array<float, 3>> coloursToDraw;
@@ -243,7 +92,7 @@ public:
         // Render3D(window, camera, coloursToDraw, drawPoints);
 
 		// Render triangles as 2D
-		renderAll(window, drawPoints, coloursToDraw);
+		render.render(window, drawPoints, coloursToDraw);
 
 		drawPoints.clear();
 		coloursToDraw.clear();
@@ -253,13 +102,7 @@ public:
 
 
 
-    ~Renderer() {
-        //clean up
-        glDeleteVertexArrays(1, &triVAO);
-        glDeleteBuffers(1, &triVBO);
-        glDeleteBuffers(1, &triEBO);
-        glDeleteProgram(triShaderProgram);
-    }
+    ~Renderer() {}
 
 
 
@@ -275,17 +118,12 @@ private:
     int winWidth, winHeight; 
     Camera camera = Camera(Vec3d(0, 0, -5));
 
-    
-
-    
-
 
 public:
     Game(int winWidth, int winHeight) {
         this->winWidth = winWidth;
         this->winHeight = winHeight;
         
-
         // Initialize GLFW
         if (!glfwInit()) {
             std::cerr << "Failed to initialize GLFW" << std::endl;
@@ -293,7 +131,8 @@ public:
         }
 
         // Set the error callback
-		glfwSetErrorCallback(errorCallback);
+		glfwSetErrorCallback(GLFWRender::errorCallback);
+
         
         // Create a GLFW window
         window = glfwCreateWindow(winWidth, winHeight, "OpenGL Triangle", NULL, NULL);
@@ -303,14 +142,9 @@ public:
             exit(-1);
         }
 
+
         // Make the window's context current
         glfwMakeContextCurrent(window);
-
-        // Create user resources as part of this thread
-		if (!renderer.projectionInit(winWidth, winHeight)) {
-			std::cerr << "Failed on user create" << std::endl;
-			exit(-1);
-		}
 
 
         //insert - issue
@@ -324,10 +158,10 @@ public:
         printf ("Renderer: %s\n", glRenderer);
         printf ("OpenGL version: %s\n", glVersion);
 
+        // happen after glfw and glew init 
+        renderer.init(winWidth, winHeight);
 
 
-        // initialize shader for triangles
-        renderer.objectShaderInit();
 
         // init_text_rendering (renderer.getAtlasImage(), renderer.getAtlasMeta(), winWidth, winHeight);
         // int hello_id = add_text (

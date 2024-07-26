@@ -22,6 +22,7 @@
 #include "util/triangle.h"
 #include "util/Process3D.h"
 #include "util/block.h"
+#include "util/GLFWRender.h"
 
 
 
@@ -32,9 +33,7 @@ extern void stbi_set_flip_vertically_on_load(int flag);
 extern unsigned char *stbi_load(const char *filename, int *x, int *y, int *channels, int desired_channels);
 extern void stbi_image_free(void *ptr);
 
-void errorCallback(int error, const char* description) {
-    std::cerr << "Error: " << description << std::endl;
-}
+
 
 void checkGLError(const char* location) {
     GLenum error = glGetError();
