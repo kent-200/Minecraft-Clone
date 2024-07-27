@@ -12,14 +12,33 @@ private:
 
     // int refers to block type from an atlas
     int blocks[16][128][16] = {0};
+    Vec3d position;
 
     // mesh
     std::vector<Triangle> tris;
 
     //update to save mesh in chunk class and only change when needed, on a block update
 
+    //remove triangles that won't be seen 
+
+    //subchunks
+
 public:
-    Chunk(){}
+    Chunk(Vec3d position){
+        this->position = position;
+    }
+
+    Chunk(){
+        this->position = Vec3d(0, 0, 0);
+    }
+
+    Vec3d getPosition(){
+        return position;
+    }
+
+    void setPosition(Vec3d position){
+        this->position = position;
+    }
 
     // Get block type at position
     int getBlock(int x, int y, int z){
@@ -59,11 +78,21 @@ public:
 
 
     void updateMesh(blockAtlas *atlas){
+        tris.clear();
+        Vec3d positionOffset = Vec3d(
+            position.x * CHUNK_LENGTH, 
+            position.y * CHUNK_HEIGHT, 
+            position.z * CHUNK_DEPTH
+        );
         for(int x = 0; x < CHUNK_LENGTH; x++){
             for(int y = 0; y < CHUNK_HEIGHT; y++){
                 for(int z = 0; z < CHUNK_DEPTH; z++){
                     if(blocks[x][y][z] != 0){
-                        Block::allRelativeTriangles(tris, Vec3d(x, y, z), atlas->getBlockTextures(blocks[x][y][z]));
+                        Block::allRelativeTriangles(
+                            tris, 
+                            Vec3d(x, y, z) + positionOffset, 
+                            atlas->getBlockTextures(blocks[x][y][z])
+                        );
                     }
                 }
             }

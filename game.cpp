@@ -13,16 +13,11 @@
 
 
 
-class Renderer {
+class MasterRenderer {
 
 	//3d renderer
 	Process3D process3D;
-
     GLFWRender render;
-
-    blockAtlas atlas;
-
-    Chunk chunk;
     
 
 
@@ -30,33 +25,17 @@ class Renderer {
     //rotation matrix
 
 public:
-    Renderer(){}
+    MasterRenderer(){}
   
 	void init(int winWidth, int winHeight){
 		process3D.init(winWidth, winHeight);
-        render.init();		
-
-        atlas.addBlock("transparent", Vec3d(0, 0, 0));
-
-        //add block to block atlas
-        atlas.addBlock("colour", Vec3d(1, 0, 0, 1), Vec3d(0, 1, 0, 1), Vec3d(0, 0, 1, 1), Vec3d(1, 1, 0, 1), Vec3d(0, 1, 1, 1), Vec3d(1, 0, 1, 1));
-		//grey cube, top light, side middle, bottom dark
-		atlas.addBlock("grey", Vec3d(0.7, 0.7, 0.7, 1), Vec3d(0.7, 0.7, 0.7, 1), Vec3d(0.6, 0.6, 0.6, 1), Vec3d(0.6, 0.6, 0.6, 1), Vec3d(0.8, 0.8, 0.8, 1), Vec3d(0.2, 0.2, 0.2, 1));
-
-        // add blocks to chunk
-        chunk.setRow(0, 0, 0, 16, 1);
-        chunk.setBlock(0, 0, 2, 2);
-
-        chunk.setHorizontalFace(10, 1);
-
-
-        chunk.updateMesh(&atlas);
+        render.init();
 	}
 
     
 
 
-    void render_process(GLFWwindow * window, Camera camera, float fElapsedTime){
+    void render_chunk(GLFWwindow * window, Camera camera, Chunk chunk, float fElapsedTime){
         
         // get 3d triangles from chunk
 
@@ -76,7 +55,7 @@ public:
 
 
 
-    ~Renderer() {}
+    ~MasterRenderer() {}
 
 
 
@@ -88,16 +67,29 @@ public:
 class Game {
 private:
     GLFWwindow* window;
-    Renderer renderer;  
+    blockAtlas atlas;
     int winWidth, winHeight; 
-    Camera camera = Camera(Vec3d(0, 0, -5));
+    World * world;
+
+    MasterRenderer renderer;
+    
 
 
 public:
     Game(int winWidth, int winHeight) {
         this->winWidth = winWidth;
         this->winHeight = winHeight;
+
+    //atlas 
+        atlas.addBlock("transparent", Vec3d(0, 0, 0));
+        //add block to block atlas
+        atlas.addBlock("colour", Vec3d(1, 0, 0, 1), Vec3d(0, 1, 0, 1), Vec3d(0, 0, 1, 1), Vec3d(1, 1, 0, 1), Vec3d(0, 1, 1, 1), Vec3d(1, 0, 1, 1));
+		//grey cube, top light, side middle, bottom dark
+		atlas.addBlock("grey", Vec3d(0.7, 0.7, 0.7, 1), Vec3d(0.7, 0.7, 0.7, 1), Vec3d(0.6, 0.6, 0.6, 1), Vec3d(0.6, 0.6, 0.6, 1), Vec3d(0.8, 0.8, 0.8, 1), Vec3d(0.2, 0.2, 0.2, 1));
         
+        //create world
+        world = new World(&atlas);
+
         // Initialize GLFW
         if (!glfwInit()) {
             std::cerr << "Failed to initialize GLFW" << std::endl;
@@ -184,10 +176,10 @@ public:
             lastX = mouseX;
 			lastY = mouseY;
             // process mouse
-            camera.processMouseInput(xoffset, yoffset, fElapsedTime);
+            world->getCamera()->processMouseInput(xoffset, yoffset, fElapsedTime);
 
             // process keyboard
-            if(camera.processKeyboardInput(window, fElapsedTime)){
+            if(world->getCamera()->processKeyboardInput(window, fElapsedTime)){
                 // close window
                 glfwSetWindowShouldClose(window, true);
             }
@@ -200,7 +192,9 @@ public:
             glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             
             // Render the scene
-            renderer.render_process(window, camera, fElapsedTime);
+            for(int i = 0; i < (int) world->numChunks(); i++){
+                renderer.render_chunk(window, *world->getCamera(), world->getChunk(i), fElapsedTime);
+            }
             //draw_texts();
             
 

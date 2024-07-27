@@ -24,6 +24,7 @@
 #include "util/block.h"
 #include "util/GLFWRender.h"
 #include "util/chunk.h"
+#include "util/world.h"
 
 
 
