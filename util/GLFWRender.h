@@ -15,6 +15,7 @@ private:
     GLuint triTexture;   
 
     //shaders
+    // 3d x,y,z calculations done by process3D, x,y done 2d render, z for ordering
     const char* vertex_shader = R"(
         #version 330 core
         layout (location = 0) in vec3 vp;

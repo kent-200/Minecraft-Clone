@@ -254,11 +254,16 @@ bool Process3D::Render3D(std::vector<Triangle> tris3d, Mat4 cameraViewMat, Vec3d
     }
 
     // Sort triangles from back to front
-    std::sort(vecTrianglesToClip.begin(), vecTrianglesToClip.end(), [](Triangle &t1, Triangle &t2){
-        float z1 = (t1.point[0].z + t1.point[1].z + t1.point[2].z) / 3.0f;
-        float z2 = (t2.point[0].z + t2.point[1].z + t2.point[2].z) / 3.0f;
-        return z1 > z2;
-    });
+    // std::sort(vecTrianglesToClip.begin(), vecTrianglesToClip.end(), [](Triangle &t1, Triangle &t2){
+    //     float z1 = (t1.point[0].z + t1.point[1].z + t1.point[2].z) / 3.0f;
+    //     float z2 = (t2.point[0].z + t2.point[1].z + t2.point[2].z) / 3.0f;
+    //     return z1 > z2;
+    // });
+
+    // instead of sorting, set set z to average z and shader will handle depth
+    // for (auto &triProjected : vecTrianglesToClip){
+    //     triProjected.point[0].z = (triProjected.point[0].z + triProjected.point[1].z + triProjected.point[2].z) / 3.0f;
+    // }
 
 
     // Loop through all transformed, viewed, projected, and sorted triangles
@@ -318,6 +323,7 @@ bool Process3D::Render3D(std::vector<Triangle> tris3d, Mat4 cameraViewMat, Vec3d
             for(int i = 0; i < 3; i++){
                 drawPoints.push_back(t.point[i].x);
                 drawPoints.push_back(t.point[i].y);
+                //std::cout << t.point[i].z << std::endl;
                 drawPoints.push_back(0.0f);
             }
 
