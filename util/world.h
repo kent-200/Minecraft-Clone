@@ -18,9 +18,9 @@ public:
         chunks.push_back(Chunk(Vec3d(0, 0, 1)));
 
         // set blocks
-        chunks[0].setHorizontalFace(0, 1);
-        chunks[1].setHorizontalFace(5, 1);
-        chunks[2].setHorizontalFace(10, 1);
+        chunks[0].setHorizontalFace(0, 5);
+        chunks[1].setHorizontalFace(5, 4);
+        chunks[2].setHorizontalFace(10, 3);
         chunks[3].setHorizontalFace(15, 1);
 
         // update mesh

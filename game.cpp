@@ -35,16 +35,26 @@ public:
     
 
 
-    void render_chunk(GLFWwindow * window, Camera camera, Chunk chunk, float fElapsedTime){
+    void render_chunk(GLFWwindow * window, Camera camera, std::vector<Chunk> chunks, float fElapsedTime){
         
         // get 3d triangles from chunk
 
 		std::vector<std::array<float, 3>> coloursToDraw;
 		std::vector<float> drawPoints;
 
+        std::vector<Triangle> triangles;
+
         // Render triangles as 3D
-		process3D.Render3D(chunk.getMesh(), camera.matView(), camera.getPos(), coloursToDraw, drawPoints);
+        for(int i = 0; i < (int) chunks.size(); i++){
+            //get triangles
+            std::vector<Triangle> tris = chunks[i].getMesh();
+            for(int j = 0; j < (int) tris.size(); j++){
+                triangles.push_back(tris[j]);
+            }
+        }
         // Render3D(window, camera, coloursToDraw, drawPoints);
+
+        process3D.Render3D(triangles, camera.matView(), camera.getPos(), coloursToDraw, drawPoints);
 
 		// Render triangles as 2D
 		render.render(window, drawPoints, coloursToDraw);
@@ -82,10 +92,17 @@ public:
 
     //atlas 
         atlas.addBlock("transparent", Vec3d(0, 0, 0));
-        //add block to block atlas
-        atlas.addBlock("colour", Vec3d(1, 0, 0, 1), Vec3d(0, 1, 0, 1), Vec3d(0, 0, 1, 1), Vec3d(1, 1, 0, 1), Vec3d(0, 1, 1, 1), Vec3d(1, 0, 1, 1));
-		//grey cube, top light, side middle, bottom dark
-		atlas.addBlock("grey", Vec3d(0.7, 0.7, 0.7, 1), Vec3d(0.7, 0.7, 0.7, 1), Vec3d(0.6, 0.6, 0.6, 1), Vec3d(0.6, 0.6, 0.6, 1), Vec3d(0.8, 0.8, 0.8, 1), Vec3d(0.2, 0.2, 0.2, 1));
+        // Grass block
+        atlas.addBlock("grass", Vec3d(0.0, 0.5, 0.0, 1), Vec3d(0.0, 0.5, 0.0, 1), Vec3d(0.0, 0.4, 0.0, 1), Vec3d(0.0, 0.4, 0.0, 1), Vec3d(0.0, 0.6, 0.0, 1), Vec3d(0.0, 0.3, 0.0, 1));
+        // Log block
+        atlas.addBlock("log", Vec3d(0.55, 0.27, 0.07, 1), Vec3d(0.55, 0.27, 0.07, 1), Vec3d(0.48, 0.24, 0.07, 1), Vec3d(0.48, 0.24, 0.07, 1), Vec3d(0.60, 0.30, 0.10, 1), Vec3d(0.40, 0.20, 0.05, 1));
+        // Dirt block
+        atlas.addBlock("dirt", Vec3d(0.6, 0.3, 0.1, 1), Vec3d(0.6, 0.3, 0.1, 1), Vec3d(0.55, 0.25, 0.05, 1), Vec3d(0.55, 0.25, 0.05, 1), Vec3d(0.65, 0.35, 0.15, 1), Vec3d(0.50, 0.20, 0.05, 1));
+        // Stone block
+        atlas.addBlock("stone", Vec3d(0.5, 0.5, 0.5, 1), Vec3d(0.5, 0.5, 0.5, 1), Vec3d(0.4, 0.4, 0.4, 1), Vec3d(0.4, 0.4, 0.4, 1), Vec3d(0.6, 0.6, 0.6, 1), Vec3d(0.3, 0.3, 0.3, 1));
+        // Water block
+        atlas.addBlock("water", Vec3d(0.0, 0.0, 0.7, 0.5), Vec3d(0.0, 0.0, 0.7, 0.5), Vec3d(0.0, 0.0, 0.6, 0.4), Vec3d(0.0, 0.0, 0.6, 0.4), Vec3d(0.0, 0.0, 0.8, 0.6), Vec3d(0.0, 0.0, 0.4, 0.3));
+
         
         //create world
         world = new World(&atlas);
@@ -193,9 +210,9 @@ public:
 
             
             // Render the scene
-            for(int i = 0; i < (int) world->numChunks(); i++){
-                renderer.render_chunk(window, *world->getCamera(), world->getChunk(i), fElapsedTime);
-            }
+            
+            renderer.render_chunk(window, *world->getCamera(), world->getChunks(), fElapsedTime);
+            
             //draw_texts();
             
 

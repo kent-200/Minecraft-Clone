@@ -5,13 +5,13 @@
 
 class Chunk {
 private:
-    // 16x16x128 chunk by default
+    // 16x16x16 chunk by default
     const int CHUNK_LENGTH = 16;
     const int CHUNK_HEIGHT = 16;
     const int CHUNK_DEPTH = 16;
 
     // int refers to block type from an atlas
-    int blocks[16][128][16] = {0};
+    int blocks[16][16][16] = {0};
     Vec3d position;
 
     // mesh
