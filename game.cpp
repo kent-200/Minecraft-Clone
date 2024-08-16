@@ -35,23 +35,16 @@ public:
     
 
 
-    void render_chunk(GLFWwindow * window, Camera camera, std::vector<Chunk> chunks, float fElapsedTime){
+    void render_chunk(GLFWwindow * window, Camera camera, std::vector<Triangle> triangles, float fElapsedTime){
         
         // get 3d triangles from chunk
 
 		std::vector<std::array<float, 3>> coloursToDraw;
 		std::vector<float> drawPoints;
 
-        std::vector<Triangle> triangles;
 
         // Render triangles as 3D
-        for(int i = 0; i < (int) chunks.size(); i++){
-            //get triangles
-            std::vector<Triangle> tris = chunks[i].getMesh();
-            for(int j = 0; j < (int) tris.size(); j++){
-                triangles.push_back(tris[j]);
-            }
-        }
+      
         // Render3D(window, camera, coloursToDraw, drawPoints);
 
         process3D.Render3D(triangles, camera.matView(), camera.getPos(), coloursToDraw, drawPoints);
@@ -92,15 +85,15 @@ public:
 
     //atlas 
         atlas.addBlock("transparent", Vec3d(0, 0, 0));
-        // Grass block
+        // Grass block 1
         atlas.addBlock("grass", Vec3d(0.0, 0.5, 0.0, 1), Vec3d(0.0, 0.5, 0.0, 1), Vec3d(0.0, 0.4, 0.0, 1), Vec3d(0.0, 0.4, 0.0, 1), Vec3d(0.0, 0.6, 0.0, 1), Vec3d(0.0, 0.3, 0.0, 1));
-        // Log block
+        // Log block 2
         atlas.addBlock("log", Vec3d(0.55, 0.27, 0.07, 1), Vec3d(0.55, 0.27, 0.07, 1), Vec3d(0.48, 0.24, 0.07, 1), Vec3d(0.48, 0.24, 0.07, 1), Vec3d(0.60, 0.30, 0.10, 1), Vec3d(0.40, 0.20, 0.05, 1));
-        // Dirt block
+        // Dirt block 3
         atlas.addBlock("dirt", Vec3d(0.6, 0.3, 0.1, 1), Vec3d(0.6, 0.3, 0.1, 1), Vec3d(0.55, 0.25, 0.05, 1), Vec3d(0.55, 0.25, 0.05, 1), Vec3d(0.65, 0.35, 0.15, 1), Vec3d(0.50, 0.20, 0.05, 1));
-        // Stone block
+        // Stone block 4
         atlas.addBlock("stone", Vec3d(0.5, 0.5, 0.5, 1), Vec3d(0.5, 0.5, 0.5, 1), Vec3d(0.4, 0.4, 0.4, 1), Vec3d(0.4, 0.4, 0.4, 1), Vec3d(0.6, 0.6, 0.6, 1), Vec3d(0.3, 0.3, 0.3, 1));
-        // Water block
+        // Water block 5
         atlas.addBlock("water", Vec3d(0.0, 0.0, 0.7, 0.5), Vec3d(0.0, 0.0, 0.7, 0.5), Vec3d(0.0, 0.0, 0.6, 0.4), Vec3d(0.0, 0.0, 0.6, 0.4), Vec3d(0.0, 0.0, 0.8, 0.6), Vec3d(0.0, 0.0, 0.4, 0.3));
 
         
@@ -211,7 +204,7 @@ public:
             
             // Render the scene
             
-            renderer.render_chunk(window, *world->getCamera(), world->getChunks(), fElapsedTime);
+            renderer.render_chunk(window, *world->getCamera(), world->getMesh(), fElapsedTime);
             
             //draw_texts();
             

@@ -34,6 +34,10 @@ class Vec3d{
 		return Vec3d(x / k, y / k, z / k);
 	}
 
+	bool operator==(const Vec3d& other) const {
+        return x == other.x && y == other.y && z == other.z;
+    }
+
 	//dot product
 	float dot_product(Vec3d v) {
 		return x * v.x + y * v.y + z * v.z;
