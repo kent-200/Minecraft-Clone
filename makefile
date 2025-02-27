@@ -1,37 +1,46 @@
 # Compiler and compiler flags
 CXX = g++
-CXXFLAGS = -Wall -Werror
-LDFLAGS = -lglfw3 -lkernel32 -lopengl32 -lglu32 -lglew32
+CXXFLAGS = -Wall -Ilib/imgui -lglfw3 -lkernel32 -lopengl32 -lglu32 -lglew32 -lwinmm
 
-# Source files directories and wildcard for all .cpp files
-SRC_DIRS = . util
-SRCS = $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.cpp))
+# Source files directory and wildcard for all .cpp files
+SRC_DIR = .
+IMGUI_DIR = lib/imgui
+IMGUI_BACKENDS_DIR = $(IMGUI_DIR)/backends
+SRCS = $(wildcard $(SRC_DIR)/*.cpp) \
+       $(IMGUI_DIR)/imgui.cpp \
+       $(IMGUI_DIR)/imgui_draw.cpp \
+       $(IMGUI_DIR)/imgui_tables.cpp \
+       $(IMGUI_DIR)/imgui_widgets.cpp \
+       $(IMGUI_BACKENDS_DIR)/imgui_impl_glfw.cpp \
+       $(IMGUI_BACKENDS_DIR)/imgui_impl_opengl3.cpp
 
 # Object files directory and naming
 OBJ_DIR = obj
-OBJS = $(patsubst %,$(OBJ_DIR)/%,$(notdir $(SRCS:.cpp=.o)))
+OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS))
 
 # Executable name
 EXEC = run.exe
 
 # Default target
-all: $(EXEC) run
+all: $(EXEC) run 
 
 # Linking object files into the executable
 $(EXEC): $(OBJS)
-	$(CXX) -o $@ $^ $(LDFLAGS)
+	$(CXX) -o $@ $^ $(CXXFLAGS)
 
 # Compiling each source file into object files
-$(OBJ_DIR)/%.o: %.cpp | $(OBJ_DIR)
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
 	$(CXX) -c -o $@ $< $(CXXFLAGS)
 
 # Create object directory if it doesn't exist
 $(OBJ_DIR):
 	mkdir $(OBJ_DIR)
 
+
+
 # Clean rule to remove compiled files and executable
 clean:
-	rm -f $(OBJ_DIR)/*.o
+	rm -f $(OBJ_DIR)\* 
 	rm -f $(EXEC)
 
 # Phony target to run the executable

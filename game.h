@@ -26,6 +26,13 @@
 
 
 
+// include imgui
+#include "lib/imgui/imgui.h"
+#include "lib/imgui/backends/imgui_impl_glfw.h"
+#include "lib/imgui/backends/imgui_impl_opengl3.h"
+
+
+
 extern const char *stbi_failure_reason(void);
 extern void stbi_image_free(void *ptr);
 extern stbi_uc * stbi_load(const char *filename, int *x, int *y, int *comp, int req_comp);

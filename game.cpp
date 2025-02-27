@@ -146,6 +146,21 @@ public:
         // Make the window's context current
         glfwMakeContextCurrent(window);
 
+        // Initialize ImGui
+		IMGUI_CHECKVERSION();
+		ImGui::CreateContext();
+		ImGuiIO& io = ImGui::GetIO(); (void)io;
+		// io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
+		// io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
+	
+		// Setup Dear ImGui style
+		ImGui::StyleColorsDark();
+		// ImGui::StyleColorsClassic();
+	
+		// Setup Platform/Renderer backends
+		ImGui_ImplGlfw_InitForOpenGL(window, true);
+		ImGui_ImplOpenGL3_Init("#version 130"); // GLSL version
+
 
         //insert - issue
         glewExperimental = GL_TRUE;
@@ -193,14 +208,26 @@ public:
 
 		int fps_update = 0;
 		double fps_elapsed_time = 0.0; 
+        float average_fps = 0.0;
 
 
         while (!glfwWindowShouldClose(window)) {
             // Handle Timing
-            tp2 = std::chrono::system_clock::now();
-            std::chrono::duration<float> elapsedTime = tp2 - tp1;
-            tp1 = tp2;
-            float fElapsedTime = elapsedTime.count();
+			tp2 = std::chrono::system_clock::now();
+			std::chrono::duration<float> elapsedTime = tp2 - tp1;
+			tp1 = tp2;
+			float fElapsedTime = elapsedTime.count();
+
+			// Update average FPS
+			fps_update++;
+			if (fps_update > 50){
+				average_fps = 50.0f / fps_elapsed_time;
+				fps_update = 0;
+				fps_elapsed_time = 0.0;
+			} else {
+				fps_elapsed_time += fElapsedTime;
+			}
+
 
             //handle mouse - use change in mouse position to rotate camera
             double mouseX, mouseY;
@@ -220,6 +247,29 @@ public:
 
 			//camera.printCord();
 
+            // Start the ImGui frame
+			ImGui_ImplOpenGL3_NewFrame();
+			ImGui_ImplGlfw_NewFrame();
+			ImGui::NewFrame();
+
+			// Set ImGui window position and size
+			ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Always);
+			ImGui::SetNextWindowSize(ImVec2(250, 80), ImGuiCond_Always);
+		
+			// Your ImGui UI code here
+			ImGui::Begin("Camera and Performance", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+			ImGui::Text("Position: (%.2f, %.2f, %.2f)", camera.getPos().x, camera.getPos().y, camera.getPos().z);
+			ImGui::Text("Yaw = %.2f, Pitch = %.2f", camera.getYaw(), camera.getPitch());
+			ImGui::Text("FPS: %.1f (%.1f)",  average_fps, ImGui::GetIO().Framerate);
+			ImGui::End();
+			
+			// Rendering
+			ImGui::Render();
+
+            //update screen
+			// Enable the vertex array functionality
+			glEnableClientState(GL_VERTEX_ARRAY);
+
 
             // Handle Frame Update
             glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -228,32 +278,26 @@ public:
             // Render the scene
             renderer.render_process(window, camera, fElapsedTime);
             //draw_texts();
+
+
+            // Render ImGui ontop
+			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
             
 
             // Swap buffers
 			glfwSwapBuffers(window);
 			// Poll for and process events
-			glfwPollEvents();
-
-
-            // Update Title Bar
-            fps_update++;
-            if (fps_update > 25){
-                double average_fps = 25.0f / fps_elapsed_time;
-                // Update window title with FPS
-                std::string windowTitle = "GLFW game engine - FPS: " + std::to_string(average_fps);
-                glfwSetWindowTitle(window, windowTitle.c_str());
-                fps_update = 0;
-                fps_elapsed_time = 0.0;
-            } else {
-                fps_elapsed_time += fElapsedTime;
-            }
-            
+			glfwPollEvents();            
         }
         return;
     }
 
     ~Game() {
+        ImGui_ImplOpenGL3_Shutdown();
+		ImGui_ImplGlfw_Shutdown();
+		ImGui::DestroyContext();
+
+
         // Terminate GLFW
         glfwTerminate();
     }
