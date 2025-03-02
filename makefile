@@ -3,7 +3,7 @@ CXX = g++
 CXXFLAGS = -Wall -Ilib/imgui -lglfw3 -lkernel32 -lopengl32 -lglu32 -lglew32 -lwinmm
 
 # Source files directory and wildcard for all .cpp files
-SRC_DIR = .
+SRC_DIR = src
 IMGUI_DIR = lib/imgui
 IMGUI_BACKENDS_DIR = $(IMGUI_DIR)/backends
 SRCS = $(wildcard $(SRC_DIR)/*.cpp) \

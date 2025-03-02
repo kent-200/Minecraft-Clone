@@ -10,7 +10,6 @@ Last Update: 25/04/2024
 */
 
 #include "header.h"
-#include <stdexcept>
 
 
 using namespace std;
@@ -30,8 +29,8 @@ private:
 	std::string filename;
 
 
-	string vertexShaderPath = "shaders/shader.vert";
-	string fragmentShaderPath = "shaders/shader.frag";
+	string vertexShaderPath = "src/shaders/shader.vert";
+	string fragmentShaderPath = "src/shaders/shader.frag";
 
 	GLuint shaderProgram;
 	GLuint VAO, VBO;
@@ -117,13 +116,6 @@ private:
 
 
 	void createBuffers(){
-		GLfloat vertices[] = {
-			// Positions         // Colors
-			0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,  // Top Right
-			0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,  // Bottom Right
-		   -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,  // Bottom Left
-		   -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f   // Top Left
-		};
 
 		// Create Vertex Array Object
 		glGenVertexArrays(1, &VAO);
@@ -132,7 +124,7 @@ private:
 		// Create a Vertex Buffer Object and copy the vertex data to it
 		glGenBuffers(1, &VBO);
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
 
 		// define the vertex attribute pointer
 		// for positions - layer 0
@@ -217,6 +209,7 @@ public:
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
+		io.IniFilename = NULL;
 		// io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
 		// io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
 	
@@ -289,9 +282,13 @@ public:
 
 		// 6. render the object
 		glBindVertexArray(VAO);
-		// draw all triangles in buffer at once
+		//glDrawArraysInstanced
 		glDrawArrays(GL_TRIANGLES, 0, vertexData.size() / 6);
 		glBindVertexArray(0);
+
+
+		
+
 
 		return true;
 		
