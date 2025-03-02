@@ -10,6 +10,7 @@ Last Update: 25/04/2024
 */
 
 #include "header.h"
+#include <stdexcept>
 
 
 using namespace std;
@@ -21,138 +22,156 @@ void errorCallback(int error, const char* description) {
 class GameEngine3D{
 private:
 	Mesh meshCube;
-	Mat4 matProj;	// Matrix that converts from view space to screen space
-	Camera camera = Camera(Vec3d(0, 0, -5));
+	//glm::mat4 matProj;	// Matrix that converts from view space to screen space
+	Camera camera = Camera(glm::vec3{0, 0, -5});
 	int windowWidth;
 	int windowHeight;
 	GLFWwindow* window;
 	std::string filename;
 
-	Vec3d Vector_IntersectPlane(Vec3d &plane_p, Vec3d &plane_n, Vec3d &lineStart, Vec3d &lineEnd){
-		plane_n = plane_n.normalise();
-		float plane_d = -plane_n.dot_product(plane_p);
-		float ad = lineStart.dot_product(plane_n);
-		float bd = lineEnd.dot_product(plane_n);
-		float t = (-plane_d - ad) / (bd - ad);
-		Vec3d lineStartToEnd = lineEnd - lineStart;
-		Vec3d lineToIntersect = lineStartToEnd * t;
-		return lineStart + lineToIntersect;
+
+	string vertexShaderPath = "shaders/shader.vert";
+	string fragmentShaderPath = "shaders/shader.frag";
+
+	GLuint shaderProgram;
+	GLuint VAO, VBO;
+
+	void shaderInit(){
+		// 1. load the shader files
+		string vertexShaderCode;
+		string fragmentShaderCode;
+
+		try {
+			ifstream vertexShaderStream(vertexShaderPath, ios::in);
+			ifstream fragmentShaderStream(fragmentShaderPath, ios::in);
+
+			if(!vertexShaderStream.is_open()) throw std::runtime_error("Cannot open vertex shader file");
+			if(!fragmentShaderStream.is_open()) throw std::runtime_error("Cannot open fragment shader file");
+
+			stringstream sstr;
+			sstr << vertexShaderStream.rdbuf();
+			vertexShaderCode = sstr.str();
+			vertexShaderStream.close();
+
+			sstr.str("");
+			sstr << fragmentShaderStream.rdbuf();
+			fragmentShaderCode = sstr.str();
+			fragmentShaderStream.close();
+			
+		} catch (exception e){
+			std::cerr << "Error: " << e.what() << std::endl;
+		}
+
+		if (vertexShaderCode.empty() || fragmentShaderCode.empty()) {
+			std::cerr << "Error: Shader code is empty." << std::endl;
+			return;
+		}
+		
+
+		const char * vertexShaderPtr = vertexShaderCode.c_str();
+		const char * fragmentShaderPtr = fragmentShaderCode.c_str();
+
+
+		// 2. compile the shaders
+		int success;
+		// vertex
+		GLuint vertex = glCreateShader(GL_VERTEX_SHADER);
+		glShaderSource(vertex, 1, &vertexShaderPtr, NULL);
+		glCompileShader(vertex);
+		glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
+		if (!success) {
+			char infoLog[512];
+			glGetShaderInfoLog(vertex, 512, NULL, infoLog);
+			std::cerr << "Error: Vertex Shader Compilation Failed\n" << infoLog << std::endl;
+		}
+
+
+
+		// fragment
+		GLuint fragment = glCreateShader(GL_FRAGMENT_SHADER);
+		glShaderSource(fragment, 1, &fragmentShaderPtr, NULL);
+		glCompileShader(fragment);
+		glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
+		if (!success) {
+			char infoLog[512];
+			glGetShaderInfoLog(fragment, 512, NULL, infoLog);
+			std::cerr << "Error: Fragment Shader Compilation Failed\n" << infoLog << std::endl;
+		}
+
+		// create shader program
+		shaderProgram = glCreateProgram();
+		glAttachShader(shaderProgram, vertex);
+		glAttachShader(shaderProgram, fragment);
+		glLinkProgram(shaderProgram);
+		glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);	// check sucess
+		if(!success){
+			char infoLog[512];
+			glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+			std::cerr << "Error: Shader Program Linking Failed\n" << infoLog << std::endl;
+		}
+
+		// delete shaders - now linked to program, no longer needed
+		glDeleteShader(vertex);
+		glDeleteShader(fragment);
 	}
 
-	int Triangle_ClipAgainstPlane(Vec3d plane_p, Vec3d plane_n, Triangle &in_tri, Triangle &out_tri1, Triangle &out_tri2){
-		// Make sure plane normal is indeed normal
-		plane_n = plane_n.normalise();
 
-		// Return signed shortest distance from point to plane, plane normal must be normalised
-		auto dist = [&](Vec3d &p)
-		{
-			//Vec3d n = Vector_Normalise(p);
-			return (plane_n.x * p.x + plane_n.y * p.y + plane_n.z * p.z - plane_n.dot_product(plane_p));
+	void createBuffers(){
+		GLfloat vertices[] = {
+			// Positions         // Colors
+			0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,  // Top Right
+			0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,  // Bottom Right
+		   -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,  // Bottom Left
+		   -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f   // Top Left
 		};
 
-		// Create two temporary storage arrays to classify points either side of plane
-		// If distance sign is positive, point lies on "inside" of plane
-		Vec3d* inside_points[3];  int nInsidePointCount = 0;
-		Vec3d* outside_points[3]; int nOutsidePointCount = 0;
+		// Create Vertex Array Object
+		glGenVertexArrays(1, &VAO);
+		glBindVertexArray(VAO);
 
-		// Get signed distance of each point in Triangle to plane
-		float d0 = dist(in_tri.p[0]);
-		float d1 = dist(in_tri.p[1]);
-		float d2 = dist(in_tri.p[2]);
+		// Create a Vertex Buffer Object and copy the vertex data to it
+		glGenBuffers(1, &VBO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
 
-		if (d0 >= 0) { inside_points[nInsidePointCount++] = &in_tri.p[0]; }
-		else { outside_points[nOutsidePointCount++] = &in_tri.p[0]; }
-		if (d1 >= 0) { inside_points[nInsidePointCount++] = &in_tri.p[1]; }
-		else { outside_points[nOutsidePointCount++] = &in_tri.p[1]; }
-		if (d2 >= 0) { inside_points[nInsidePointCount++] = &in_tri.p[2]; }
-		else { outside_points[nOutsidePointCount++] = &in_tri.p[2]; }
+		// define the vertex attribute pointer
+		// for positions - layer 0
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+		glEnableVertexAttribArray(0);
+		// for colors - layer 1
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+		glEnableVertexAttribArray(1);
 
-		// Now classify Triangle points, and break the input Triangle into 
-		// smaller output triangles if required. There are four possible
-		// outcomes...
 
-		if (nInsidePointCount == 0)
-		{
-			// All points lie on the outside of plane, so clip whole Triangle
-			// It ceases to exist
-
-			return 0; // No returned triangles are valid
-		}
-
-		if (nInsidePointCount == 3)
-		{
-			// All points lie on the inside of plane, so do nothing
-			// and allow the Triangle to simply pass through
-			out_tri1 = in_tri;
-
-			return 1; // Just the one returned original Triangle is valid
-		}
-
-		if (nInsidePointCount == 1 && nOutsidePointCount == 2)
-		{
-			// Triangle should be clipped. As two points lie outside
-			// the plane, the Triangle simply becomes a smaller Triangle
-
-			// Copy appearance info to new Triangle
-			out_tri1.col =  in_tri.col;
-
-			// The inside point is valid, so keep that...
-			out_tri1.p[0] = *inside_points[0];
-
-			// but the two new points are at the locations where the 
-			// original sides of the Triangle (lines) intersect with the plane
-			out_tri1.p[1] = Vector_IntersectPlane(plane_p, plane_n, *inside_points[0], *outside_points[0]);
-			out_tri1.p[2] = Vector_IntersectPlane(plane_p, plane_n, *inside_points[0], *outside_points[1]);
-
-			return 1; // Return the newly formed single Triangle
-		}
-
-		if (nInsidePointCount == 2 && nOutsidePointCount == 1)
-		{
-			// Triangle should be clipped. As two points lie inside the plane,
-			// the clipped Triangle becomes a "quad". Fortunately, we can
-			// represent a quad with two new triangles
-
-			// Copy appearance info to new triangles
-			out_tri1.col =  in_tri.col;
-
-			out_tri2.col =  in_tri.col;
-
-			// The first Triangle consists of the two inside points and a new
-			// point determined by the location where one side of the Triangle
-			// intersects with the plane
-			out_tri1.p[0] = *inside_points[0];
-			out_tri1.p[1] = *inside_points[1];
-			out_tri1.p[2] = Vector_IntersectPlane(plane_p, plane_n, *inside_points[0], *outside_points[0]);
-
-			// The second Triangle is composed of one of he inside points, a
-			// new point determined by the intersection of the other side of the 
-			// Triangle and the plane, and the newly created point above
-			out_tri2.p[0] = *inside_points[1];
-			out_tri2.p[1] = out_tri1.p[2];
-			out_tri2.p[2] = Vector_IntersectPlane(plane_p, plane_n, *inside_points[1], *outside_points[0]);
-
-			return 2; // Return two newly formed triangles which form a quad
-		}
-		return 0;
+		// Unbind the VAO
+		glBindVertexArray(0);
 	}
 
-	void drawTriangle(vector<array<float, 9>> triangles, vector<float> colours){
-		for(int i = 0; i < (int) triangles.size(); i++){
-			glColor3f(colours[i], colours[i], colours[i]);
-			glVertexPointer(3, GL_FLOAT, 0, &triangles[i]);
-			glDrawArrays(GL_TRIANGLES, 0, 3);
-		}
-	}
 
 	bool GraphicsInit(){
 		// Load object file
 		meshCube.LoadFromObjectFile(filename);
 
+		if(meshCube.tris.empty()){
+			std::cerr << "Error: Mesh is empty" << std::endl;
+			throw std::runtime_error("Mesh is empty");
+		} else {
+			cout << "Loaded mesh with " << meshCube.tris.size() << " triangles" << endl;
+		}
+
+		// Create the shader program
+		shaderInit();	
+
+
+		// Create the vertex buffer object
+		createBuffers();
+
 		// Projection Matrix
-		matProj = Mat4::makeProjection(90.0f, (float)windowHeight / (float)windowWidth, 0.1f, 1000.0f);
+		//matProj = glm::perspective(glm::radians(90.0f), (float)windowWidth / (float)windowHeight, 0.1f, 1000.0f);
 		return true;
 	}
+
+
 
 
 public:
@@ -170,6 +189,11 @@ public:
 		// Set the error callback
 		glfwSetErrorCallback(errorCallback);
 
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+
 		// Create a GLFW window
 		window = glfwCreateWindow(windowWidth, windowHeight, "Basic 3D Viewer", NULL, NULL);
 		if (!window) {
@@ -178,13 +202,15 @@ public:
 			exit(-1);
 		}
 
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-
 		// Make the window's context current
 		glfwMakeContextCurrent(window);
+
+		GLenum err = glewInit();
+		if (err != GLEW_OK) {
+			std::cerr << "Error: " << glewGetErrorString(err) << std::endl;
+			glfwTerminate();
+			exit(-1);
+		}
 
 
 		// Initialize ImGui
@@ -213,176 +239,65 @@ public:
 	}
 
 	bool Render(float fElapsedTime){
-		Mat4 matWorld = Mat4::makeIdentity();	// Form World Matrix
+		glm::mat4 matProj = glm::perspective(glm::radians(90.0f), (float) windowWidth / (float) windowHeight, 0.1f, 1000.0f);
+		glm::mat4 matWorld = glm::mat4(1.0f);	// Form World Matrix
 
 		// Get view matrix from camera class
-		Mat4 matView = camera.matView();
+		glm::mat4 matView = camera.matView();	
 
-		// Store triagles for rastering later
-		vector<Triangle> vecTrianglesToClip;
-		vector<array<float, 9>> trianglesToDraw;
-		vector<float> coloursToDraw;
-
-		// Draw Triangles
-		for (auto tri : meshCube.tris){
-			Triangle triProjected, triTransformed, triViewed;
-
-			// World Matrix Transform
-			for(int i = 0; i < 3; i++){
-				triTransformed.p[i] = matWorld * tri.p[i];
-			}
-
-			// Calculate Triangle Normal
-			Vec3d normal, line1, line2;
-
-			// Get lines either side of Triangle
-			line1 = triTransformed.p[1] - triTransformed.p[0];
-			line2 = triTransformed.p[2] - triTransformed.p[0];
-
-			// Take cross product of lines to get normal to Triangle surface
-			normal = line1.cross_product(line2);
-
-			// You normally need to normalise a normal!
-			normal = normal.normalise();
-			
-			// Get Ray from Triangle to camera
-			Vec3d vCameraRay = triTransformed.p[0] - camera.pos;
+		// Use the shader program
+		glUseProgram(shaderProgram);
 
 
-			// If ray is aligned with normal, then Triangle is visible
-			if (normal.dot_product(vCameraRay) < 0.0f){
-				// Illumination
-				Vec3d light_direction = { 0.0f, 1.0f, -0.5f };
-				light_direction = light_direction.normalise();
+		// Pass matrices to the shader
+		GLint modelLoc = glGetUniformLocation(shaderProgram, "model");
+		GLint viewLoc = glGetUniformLocation(shaderProgram, "view");
+		GLint projLoc = glGetUniformLocation(shaderProgram, "projection");
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(matWorld));
+		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(matView));
+		glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(matProj));
 
-				// How "aligned" are light direction and Triangle surface normal?
-				float dp = max(0.2f, (float)(light_direction.dot_product(normal) * 1));
-				dp = min(dp, 0.85f);
 
-				triTransformed.col = dp;
+		// Prepare vertex and color data
+		std::vector<float> vertexData;
+		vertexData.reserve(meshCube.tris.size() * 6 * 3); // 3 vertices per triangle, 6 floats per vertex (3 for position, 3 for color)
 
-				// Convert World Space --> View Space
-				for(int i = 0; i < 3; i++){
-					triViewed.p[i] = matView * triTransformed.p[i];
-				}
-				triViewed.col = triTransformed.col;
+		for (const auto& tri : meshCube.tris) {
+			for (int i = 0; i < 3; ++i) {
+				// Vertex positions
+				vertexData.push_back(tri.p[i].x);
+				vertexData.push_back(tri.p[i].y);
+				vertexData.push_back(tri.p[i].z);
 
-				// Clip Viewed Triangle against near plane, this could form two additional
-				// additional triangles. 
-				int nClippedTriangles = 0;
-				Triangle clipped[2];
-				nClippedTriangles = Triangle_ClipAgainstPlane({ 0.0f, 0.0f, 0.1f }, { 0.0f, 0.0f, 1.0f }, triViewed, clipped[0], clipped[1]);
-
-				// We may end up with multiple triangles form the clip, so project as
-				// required
-				for (int n = 0; n < nClippedTriangles; n++){
-					Vec3d vOffsetView = { 1,1,0 };
-
-					//for each point in the triangle
-					for (int i = 0; i < 3; i++){
-						// Project triangles from 3D --> 2D
-						triProjected.p[i] = matProj * clipped[n].p[i];
-
-						// Scale into view, we moved the normalising into cartesian space
-						// out of the matrix.vector function from the previous videos, so
-						// do this manually
-						triProjected.p[i] = triProjected.p[i] / triProjected.p[i].w;
-
-						// X/Y are inverted so put them back
-						triProjected.p[i].x *= -1.0f;
-						triProjected.p[i].y *= 1.0f;
-
-						// Offset verts into visible normalised space
-						triProjected.p[i] = triProjected.p[i] + vOffsetView;
-
-						// Scale into view
-						triProjected.p[i].x *= 0.5f * (float)windowWidth;
-						triProjected.p[i].y *= 0.5f * (float)windowHeight;
-					}
-					triProjected.col = clipped[n].col;
-
-					// Store Triangle for sorting
-					vecTrianglesToClip.push_back(triProjected);
-				}			
+				// Vertex colors (assuming tri.col is a float representing grayscale intensity)
+				vertexData.push_back(tri.col); // Red
+				vertexData.push_back(tri.col); // Green
+				vertexData.push_back(tri.col); // Blue
 			}
 		}
 
-		// Sort triangles from back to front
-		sort(vecTrianglesToClip.begin(), vecTrianglesToClip.end(), [](Triangle &t1, Triangle &t2){
-			float z1 = (t1.p[0].z + t1.p[1].z + t1.p[2].z) / 3.0f;
-			float z2 = (t2.p[0].z + t2.p[1].z + t2.p[2].z) / 3.0f;
-			return z1 > z2;
-		});
-
-
-		// Loop through all transformed, viewed, projected, and sorted triangles
-		// Clip triangles against all four screen edges and normalise to OpenGL screen coordinates
-		for (auto &triToRaster : vecTrianglesToClip){
-			// Clip triangles against all four screen edges, this could yield
-			// a bunch of triangles, so create a queue that we traverse to 
-			//  ensure we only test new triangles generated against planes
-			Triangle clipped[2];
-			list<Triangle> listTriangles;
-
-			// Add initial Triangle
-			listTriangles.push_back(triToRaster);
-			int nNewTriangles = 1;
-
-			for (int p = 0; p < 4; p++){
-				int nTrisToAdd = 0;
-				while (nNewTriangles > 0){
-					// Take Triangle from front of queue
-					Triangle test = listTriangles.front();
-					listTriangles.pop_front();
-					nNewTriangles--;
-
-					// Clip it against a plane. We only need to test each 
-					// subsequent plane, against subsequent new triangles
-					// as all triangles after a plane clip are guaranteed
-					// to lie on the inside of the plane. I like how this
-					// comment is almost completely and utterly justified
-					switch (p)
-					{
-					case 0:	nTrisToAdd = Triangle_ClipAgainstPlane({ 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, test, clipped[0], clipped[1]); break;
-					case 1:	nTrisToAdd = Triangle_ClipAgainstPlane({ 0.0f, (float)windowHeight - 1, 0.0f }, { 0.0f, -1.0f, 0.0f }, test, clipped[0], clipped[1]); break;
-					case 2:	nTrisToAdd = Triangle_ClipAgainstPlane({ 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, test, clipped[0], clipped[1]); break;
-					case 3:	nTrisToAdd = Triangle_ClipAgainstPlane({ (float)windowWidth - 1, 0.0f, 0.0f }, { -1.0f, 0.0f, 0.0f }, test, clipped[0], clipped[1]); break;
-					}
-
-					// Clipping may yield a variable number of triangles, so
-					// add these new ones to the back of the queue for subsequent
-					// clipping against next planes
-					for (int w = 0; w < nTrisToAdd; w++)
-						listTriangles.push_back(clipped[w]);
-				}
-				nNewTriangles = listTriangles.size();
-			}
-
-
-			// Draw the transformed, viewed, clipped, projected, sorted, clipped triangles
-			for (auto &t : listTriangles){
-				// normalise to screen and push to draw list
-				for(int i = 0; i < 3; i++){
-					t.p[i].x = (t.p[i].x / (windowWidth / 2)) - 1;
-					t.p[i].y = (t.p[i].y / (windowHeight / 2)) - 1;					
-				}
-
-				std::array<float, 9> point{t.p[0].x, t.p[0].y, 0.0f, t.p[1].x, t.p[1].y, 0.0f, t.p[2].x, t.p[2].y, 0.0f};
-				trianglesToDraw.push_back(point);
-				coloursToDraw.push_back(t.col);				
-			}
+		if(vertexData.empty()){
+			cout << "Vertex Data is empty" << endl;
+			return false;
 		}
 
+		// 5. Update Vertex Buffer Object (VBO) - new data
+		// use method: glBufferSubData not glMapBuffer
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(float), vertexData.data(), GL_DYNAMIC_DRAW);
 
-		drawTriangle(trianglesToDraw, coloursToDraw);
+
+		// 6. render the object
+		glBindVertexArray(VAO);
+		// draw all triangles in buffer at once
+		glDrawArrays(GL_TRIANGLES, 0, vertexData.size() / 6);
+		glBindVertexArray(0);
 
 		return true;
+		
 	}
 
 	void Run(){
-		glm::vec3 cmpos = glm::vec3(0.0f, 0.0f, 3.0f);
-		cmpos[0] = 6.0f;
-
 		auto tp1 = std::chrono::system_clock::now();
 		auto tp2 = std::chrono::system_clock::now();
 
@@ -440,11 +355,11 @@ public:
 				camera.fPitch = -1.5f;
 			}
 
-			Vec3d vForward = camera.lookDir * (8.0f * fElapsedTime);
-			Vec3d vRight = { camera.lookDir.z, 0, -camera.lookDir.x };
+			glm::vec3 vForward = camera.lookDir * (8.0f * fElapsedTime);
+			glm::vec3 vRight = { camera.lookDir.z, 0, -camera.lookDir.x };
 			vRight = vRight * (8.0f * fElapsedTime);
 
-			Vec3d vUp = { 0,1,0 };
+			glm::vec3 vUp = { 0,1,0 };
 			vUp = vUp * (8.0f * fElapsedTime);
 
 			// Standard FPS Control scheme, but turn instead of strafe
