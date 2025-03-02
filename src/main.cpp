@@ -1,11 +1,7 @@
 /*
-This is a 3D Graphics engine that has been adapted from working in the console to basic openGL using GLFW3. It is based on the work of Javidx9.
-https://www.github.com/onelonecoder
+3D Graphics Engine using shaders and OpenGL
 
-Compile
-g++ -o run main.cpp -lglfw3 -lkernel32 -lopengl32 -lglu32 -lglew32 -Wall -lwinmm -Werror -pedantic
-
-Last Update: 25/04/2024
+Last Update: 2/03/2025
 
 */
 
