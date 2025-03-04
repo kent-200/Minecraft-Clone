@@ -183,42 +183,49 @@ public:
     void createMesh(){
         mesh.clear();
 
-        // for(int x = 0; x < LENGTH; x++){
-        //     for(int y = 0; y < WIDTH; y++){
-        //         for(int z = 0; z < HEIGHT; z++){
-        //             if(blocks[x][y][z] == 0) continue;
-        //         }
-        //     }
-        // }
+        for(int x = 0; x < LENGTH; x++){
+            for(int y = 0; y < WIDTH; y++){
+                for(int z = 0; z < HEIGHT; z++){
+                    float cord[3] = {(float) x, (float) y, (float) z};
 
-        // add a cube to the mesh, all 6 faces
-        for(int i = 0; i < 6; i++){
-            // First triangle
-            for(int j = 0; j < 3; j++) mesh.push_back(verticies[i][j]);   // Vertex 1
-            mesh.push_back(uv[i][0] * UV_WIDTH + UV_WIDTH * offset[i][0]);               
-            mesh.push_back(uv[i][1] * UV_HEIGHT + UV_HEIGHT * offset[i][1]);              
-    
-            for(int j = 3; j < 6; j++) mesh.push_back(verticies[i][j]);   // Vertex 2
-            mesh.push_back(uv[i][2] * UV_WIDTH + UV_WIDTH * offset[i][0]);               
-            mesh.push_back(uv[i][3] * UV_HEIGHT + UV_HEIGHT * offset[i][1]);   
-            
-            for(int j = 6; j < 9; j++) mesh.push_back(verticies[i][j]);   // Vertex 3
-            mesh.push_back(uv[i][4] * UV_WIDTH + UV_WIDTH * offset[i][0]);               
-            mesh.push_back(uv[i][5] * UV_HEIGHT + UV_HEIGHT * offset[i][1]);   
-    
-            // Second triangle
-            for(int j = 9; j < 12; j++) mesh.push_back(verticies[i][j]);  // Vertex 4
-            mesh.push_back(uv[i][6] * UV_WIDTH + UV_WIDTH * offset[i][0]);               
-            mesh.push_back(uv[i][7] * UV_HEIGHT + UV_HEIGHT * offset[i][1]);   
-    
-            for(int j = 12; j < 15; j++) mesh.push_back(verticies[i][j]); // Vertex 5
-            mesh.push_back(uv[i][8] * UV_WIDTH + UV_WIDTH * offset[i][0]);               
-            mesh.push_back(uv[i][9] * UV_HEIGHT + UV_HEIGHT * offset[i][1]);   
-    
-            for(int j = 15; j < 18; j++) mesh.push_back(verticies[i][j]); // Vertex 6
-            mesh.push_back(uv[i][10] * UV_WIDTH + UV_WIDTH * offset[i][0]);               
-            mesh.push_back(uv[i][11] * UV_HEIGHT + UV_HEIGHT * offset[i][1]);   
+
+                    // add a cube to the mesh, all 6 faces
+                    for(int i = 0; i < 6; i++){
+                        // First triangle
+                        for(int j = 0; j < 3; j++) mesh.push_back(verticies[i][j] + cord[j]);   // Vertex 1
+                        mesh.push_back(uv[i][0] * UV_WIDTH + UV_WIDTH * offset[i][0]);               
+                        mesh.push_back(uv[i][1] * UV_HEIGHT + UV_HEIGHT * offset[i][1]);              
+                
+                        for(int j = 3; j < 6; j++) mesh.push_back(verticies[i][j] + cord[j - 3]);   // Vertex 2
+                        mesh.push_back(uv[i][2] * UV_WIDTH + UV_WIDTH * offset[i][0]);               
+                        mesh.push_back(uv[i][3] * UV_HEIGHT + UV_HEIGHT * offset[i][1]);   
+                        
+                        for(int j = 6; j < 9; j++) mesh.push_back(verticies[i][j] + cord[j - 6]);   // Vertex 3
+                        mesh.push_back(uv[i][4] * UV_WIDTH + UV_WIDTH * offset[i][0]);               
+                        mesh.push_back(uv[i][5] * UV_HEIGHT + UV_HEIGHT * offset[i][1]);   
+                
+                        // Second triangle
+                        for(int j = 9; j < 12; j++) mesh.push_back(verticies[i][j] + cord[j - 9]);  // Vertex 4
+                        mesh.push_back(uv[i][6] * UV_WIDTH + UV_WIDTH * offset[i][0]);               
+                        mesh.push_back(uv[i][7] * UV_HEIGHT + UV_HEIGHT * offset[i][1]);   
+                
+                        for(int j = 12; j < 15; j++) mesh.push_back(verticies[i][j] + cord[j - 12]); // Vertex 5
+                        mesh.push_back(uv[i][8] * UV_WIDTH + UV_WIDTH * offset[i][0]);               
+                        mesh.push_back(uv[i][9] * UV_HEIGHT + UV_HEIGHT * offset[i][1]);   
+                
+                        for(int j = 15; j < 18; j++) mesh.push_back(verticies[i][j] + cord[j - 15]); // Vertex 6
+                        mesh.push_back(uv[i][10] * UV_WIDTH + UV_WIDTH * offset[i][0]);               
+                        mesh.push_back(uv[i][11] * UV_HEIGHT + UV_HEIGHT * offset[i][1]);   
+                    }
+
+
+                }
+            }
         }
+
+        std::cout << "Mesh size: " << mesh.size() << std::endl;
+
+        
 
     }
 

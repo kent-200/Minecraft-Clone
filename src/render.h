@@ -136,6 +136,9 @@ private:
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LESS);
 
+		// disable face culling
+		glDisable(GL_CULL_FACE);
+
 	}
 
 

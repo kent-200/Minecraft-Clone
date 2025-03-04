@@ -144,7 +144,7 @@ public:
 			xoffset *= sensitivity;
 			yoffset *= sensitivity;
 
-			camera.fYaw += xoffset * fElapsedTime;
+			camera.fYaw -= xoffset * fElapsedTime;
 			camera.fPitch += yoffset * fElapsedTime;
 
 
