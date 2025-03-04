@@ -40,8 +40,8 @@ $(OBJ_DIR):
 
 # Clean rule to remove compiled files and executable
 clean:
-	rm -f $(OBJ_DIR)\* 
-	rm -f $(EXEC)
+	powershell -Command "Remove-Item -Force -Recurse $(OBJ_DIR)\*"
+	powershell -Command "Remove-Item -Force $(EXEC)"
 
 # Phony target to run the executable
 run: $(EXEC)

@@ -91,7 +91,7 @@ public:
 		}
 
 		chunk.createMesh();
-		cout << chunk.getMesh().size() << endl;
+		//cout << chunk.getMesh().size() << endl;
 
 	}
 
@@ -231,8 +231,11 @@ public:
 		ImGui::DestroyContext();
 
 
-		// Clean up and exit
-    	glfwTerminate();
+		
+
+		// call destructor for render
+		render.destroy();
+
     	return;
 	}
 

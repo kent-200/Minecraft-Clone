@@ -2,6 +2,10 @@
 #include "header.h"
 #include "camera.h"
 
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "../lib/stb_image.h"
+
 /*
 Render
 has all opengl rendering functions, manages shaders and buffers
@@ -11,12 +15,17 @@ instance of this class is created in main.cpp
 
 class Render {
 private:
+	const int SHADER_INPUT_SIZE = 5;	// x, y, z, x, y	// number of floats per vertex passed as layout
+
     // file paths
     std::string vertexShaderPath = "src/shaders/shader.vert";
     std::string fragmentShaderPath = "src/shaders/shader.frag";
 
+	std::string texturePath = "src/textures/blocks.png";
+
     GLuint shaderProgram;
     GLuint VAO, VBO;
+	GLuint texture;
 
     glm::mat4 projectionMatrix;
 
@@ -114,15 +123,53 @@ private:
 
 		// define the vertex attribute pointer
 		// for positions - layer 0
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, SHADER_INPUT_SIZE * sizeof(GLfloat), (GLvoid*)0);
 		glEnableVertexAttribArray(0);
 		// for colors - layer 1
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, SHADER_INPUT_SIZE * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 		glEnableVertexAttribArray(1);
 
 
 		// Unbind the VAO
 		glBindVertexArray(0);
+
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LESS);
+
+	}
+
+
+	void loadTexture(){
+		int width, height, nrChannels;
+		unsigned char *data = stbi_load(texturePath.c_str(), &width, &height, &nrChannels, 0);
+		if (data){
+			glGenTextures(1, &texture);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, texture);
+
+			// Set the texture wrapping parameters, chose pixelated look
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+			// repeated setting - want to stretch on both x any y axis
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+
+			// generate texture
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+			glGenerateMipmap(GL_TEXTURE_2D);
+
+			stbi_image_free(data);
+		} else {
+			std::cerr << "Error: Failed to load texture" << std::endl;
+			exit(0);
+		}
+
+		GLuint textureLoc = glGetUniformLocation(shaderProgram, "tex0");
+		glUseProgram(shaderProgram);
+		glUniform1i(textureLoc, 0);
+
 	}
 
 public:
@@ -133,6 +180,7 @@ public:
 		projectionMatrix = glm::perspective(glm::radians(90.0f), (float) windowWidth / (float) windowHeight, 0.1f, 1000.0f);
 		shaderInit();
         createBuffers();
+		loadTexture();
 		return true;
 	}
 
@@ -149,10 +197,15 @@ public:
 
 		// Set the background color to white
 		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		
 
 		// Use the shader program
 		glUseProgram(shaderProgram);
+
+
+		// bind texture
+		glBindTexture(GL_TEXTURE_2D, texture);
 
 
 		// Pass matrices to the shader
@@ -173,11 +226,22 @@ public:
 		// 6. render the object
 		glBindVertexArray(VAO);
 		//glDrawArraysInstanced
-		glDrawArrays(GL_TRIANGLES, 0, data.size() / 6);
+		glDrawArrays(GL_TRIANGLES, 0, data.size() / SHADER_INPUT_SIZE);
 		glBindVertexArray(0);
 
 		return true;
 		
 	}
 
+
+
+	// Destructor
+	void destroy(){
+		glDeleteVertexArrays(1, &VAO);
+		glDeleteBuffers(1, &VBO);
+		glDeleteProgram(shaderProgram);
+
+		// Clean up and exit
+    	glfwTerminate();
+	}
 };
