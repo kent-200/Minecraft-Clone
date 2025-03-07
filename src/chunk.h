@@ -217,7 +217,8 @@ public:
     }
 
     void addBlockFace(int x, int y, int z, int face, int type){
-        float cord[3] = {(float) x, (float) y, (float) z};
+        // accound for chunk position + block position
+        float cord[3] = {(float) x + position.x * WIDTH, (float) y + position.y * HEIGHT, (float) z + position.z * LENGTH};
 
         vector<float> offset = atlas->getBlockCoordinates(type, face);
 

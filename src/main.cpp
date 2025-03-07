@@ -25,7 +25,9 @@ private:
 	GLFWwindow* window;
 	Render render;
 	Atlas atlas;
-	Chunk chunk = Chunk({0, 0, 0}, &atlas, 4);
+
+	vector<Chunk> chunks;
+
 
 
 
@@ -33,6 +35,16 @@ public:
 	GameEngine3D(int w, int h){
 		windowWidth = w;
 		windowHeight = h;
+
+		// create chunks
+		chunks.push_back(Chunk({0, 0, 0}, &atlas, 1));
+		chunks.push_back(Chunk({1, 0, 0}, &atlas, 2));
+		chunks.push_back(Chunk({0, 0, 1}, &atlas, 3));
+		chunks.push_back(Chunk({1, 0, 1}, &atlas, 4));
+		chunks.push_back(Chunk({2, 0, 0}, &atlas, 5));
+		chunks.push_back(Chunk({2, 0, 1}, &atlas, 6));
+		chunks.push_back(Chunk({2, 0, 2}, &atlas, 7));
+
 
 		// Initialize GLFW
 		if (!glfwInit()) {
@@ -92,8 +104,9 @@ public:
 		}
 
 
-
-		chunk.createMesh();
+		for(auto &chunk : chunks){
+			chunk.createMesh();
+		}
 		//cout << chunk.getMesh().size() << endl;
 
 	}
@@ -229,7 +242,9 @@ public:
 
 
 			// render 3d scene
-			render.renderData(camera.viewMatrix(), chunk.getMesh());
+			for(auto &chunk : chunks){
+				render.renderData(camera.viewMatrix(), chunk.getMesh());
+			}
 
 
 			// Render ImGui ontop
