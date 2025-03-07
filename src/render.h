@@ -136,9 +136,6 @@ private:
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LESS);
 
-		// disable face culling
-		glDisable(GL_CULL_FACE);
-
 	}
 
 
@@ -197,10 +194,6 @@ public:
         }
 
 		glm::mat4 worldMatrix = glm::mat4(1.0f);	// Form World Matrix
-
-		// Set the background color to white
-		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
 
 		// Use the shader program

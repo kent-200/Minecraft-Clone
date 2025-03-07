@@ -24,7 +24,8 @@ private:
 	int windowHeight;
 	GLFWwindow* window;
 	Render render;
-	Chunk chunk;
+	Atlas atlas;
+	Chunk chunk = Chunk({0, 0, 0}, &atlas, 4);
 
 
 
@@ -90,6 +91,8 @@ public:
 			exit(-1);
 		}
 
+
+
 		chunk.createMesh();
 		//cout << chunk.getMesh().size() << endl;
 
@@ -112,6 +115,7 @@ public:
 		int fps_update = 0;
 		double fps_elapsed_time = 0.0;
 		double average_fps = 0.0;
+		bool cursorEnabled = false;
 
 		while (!glfwWindowShouldClose(window)){
 			// Run as fast as possible
@@ -133,8 +137,8 @@ public:
 			}
 
 			//handle mouse - use change in mouse position to rotate camera
-			double mouseX, mouseY;
-			glfwGetCursorPos(window, &mouseX, &mouseY);
+			double mouseX, mouseY = 0.0;
+			if(!cursorEnabled) glfwGetCursorPos(window, &mouseX, &mouseY);
 			double xoffset = mouseX - lastX;
 			double yoffset = lastY - mouseY; // reversed since y-coordinates go from bottom to top
 			lastX = mouseX;
@@ -180,6 +184,17 @@ public:
 			
 			//escape
 			if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window, true);
+
+			// toggle cursor
+			if(glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS){
+				if(cursorEnabled){
+					glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+					cursorEnabled = false;
+				} else {
+					glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+					cursorEnabled = true;
+				}
+			}
 			
 
 
@@ -207,6 +222,10 @@ public:
 			//update screen
 			// Enable the vertex array functionality
 			glEnableClientState(GL_VERTEX_ARRAY);
+
+			// Set the background color to white
+			glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
 			// render 3d scene

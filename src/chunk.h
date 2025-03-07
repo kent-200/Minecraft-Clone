@@ -1,4 +1,5 @@
 #include "header.h"
+#include "atlas.h"
 
 /*
 Chunk
@@ -123,14 +124,15 @@ float uv[6][12] = {
     }
 };
 
-float offset[6][2] = {
-    {1.0f, 0.0f},   // Front face
-    {1.0f, 0.0f},   // Back face
-    {0.0f, 0.0f},   // Top face
-    {2.0f, 0.0f},   // Bottom face
-    {1.0f, 0.0f},   // Right face
-    {1.0f, 0.0f}    // Left face
-};
+// // x, y - FOR GRASS BLOCK   
+// float offset[6][2] = {
+//     {1.0f, 0.0f},   // Front face
+//     {1.0f, 0.0f},   // Back face
+//     {0.0f, 0.0f},   // Top face
+//     {2.0f, 0.0f},   // Bottom face
+//     {1.0f, 0.0f},   // Right face
+//     {1.0f, 0.0f}    // Left face
+// };
 
 using std::vector;
 
@@ -139,26 +141,23 @@ class Chunk {
     const int LENGTH = 16;
     const int WIDTH = 16;
     const int HEIGHT = 16;
-    const GLfloat UV_WIDTH = 1.0f / 16.0f;
-    const GLfloat UV_HEIGHT = 1.0f / 16.0f;
 
     vector<vector<vector<int>>> blocks;
 
     glm::vec3 position;
     std::vector<float> mesh;
+    Atlas * atlas;
 
 public:
-    Chunk() : position(glm::vec3(0, 0, 0)) {
+    Chunk(glm::vec3 position, Atlas * atlas) : position(position) {
         blocks = vector<vector<vector<int>>>(LENGTH, vector<vector<int>>(WIDTH, vector<int>(HEIGHT, 0)));
-    }
-
-    Chunk(glm::vec3 position) : position(position) {
-        blocks = vector<vector<vector<int>>>(LENGTH, vector<vector<int>>(WIDTH, vector<int>(HEIGHT, 0)));
+        this->atlas = atlas;
     }
     
 
-    Chunk(glm::vec3 position, int type) : position(position) {
+    Chunk(glm::vec3 position, Atlas * atlas, int type) : position(position) {
         blocks = vector<vector<vector<int>>>(LENGTH, vector<vector<int>>(WIDTH, vector<int>(HEIGHT, type)));
+        this->atlas = atlas;
     }
 
     vector<vector<vector<int>>> getBlocks(){
@@ -186,38 +185,26 @@ public:
         for(int x = 0; x < LENGTH; x++){
             for(int y = 0; y < WIDTH; y++){
                 for(int z = 0; z < HEIGHT; z++){
-                    float cord[3] = {(float) x, (float) y, (float) z};
+                    if(blocks[x][y][z] == 0) continue;
 
 
-                    // add a cube to the mesh, all 6 faces
-                    for(int i = 0; i < 6; i++){
-                        // First triangle
-                        for(int j = 0; j < 3; j++) mesh.push_back(verticies[i][j] + cord[j]);   // Vertex 1
-                        mesh.push_back(uv[i][0] * UV_WIDTH + UV_WIDTH * offset[i][0]);               
-                        mesh.push_back(uv[i][1] * UV_HEIGHT + UV_HEIGHT * offset[i][1]);              
-                
-                        for(int j = 3; j < 6; j++) mesh.push_back(verticies[i][j] + cord[j - 3]);   // Vertex 2
-                        mesh.push_back(uv[i][2] * UV_WIDTH + UV_WIDTH * offset[i][0]);               
-                        mesh.push_back(uv[i][3] * UV_HEIGHT + UV_HEIGHT * offset[i][1]);   
-                        
-                        for(int j = 6; j < 9; j++) mesh.push_back(verticies[i][j] + cord[j - 6]);   // Vertex 3
-                        mesh.push_back(uv[i][4] * UV_WIDTH + UV_WIDTH * offset[i][0]);               
-                        mesh.push_back(uv[i][5] * UV_HEIGHT + UV_HEIGHT * offset[i][1]);   
-                
-                        // Second triangle
-                        for(int j = 9; j < 12; j++) mesh.push_back(verticies[i][j] + cord[j - 9]);  // Vertex 4
-                        mesh.push_back(uv[i][6] * UV_WIDTH + UV_WIDTH * offset[i][0]);               
-                        mesh.push_back(uv[i][7] * UV_HEIGHT + UV_HEIGHT * offset[i][1]);   
-                
-                        for(int j = 12; j < 15; j++) mesh.push_back(verticies[i][j] + cord[j - 12]); // Vertex 5
-                        mesh.push_back(uv[i][8] * UV_WIDTH + UV_WIDTH * offset[i][0]);               
-                        mesh.push_back(uv[i][9] * UV_HEIGHT + UV_HEIGHT * offset[i][1]);   
-                
-                        for(int j = 15; j < 18; j++) mesh.push_back(verticies[i][j] + cord[j - 15]); // Vertex 6
-                        mesh.push_back(uv[i][10] * UV_WIDTH + UV_WIDTH * offset[i][0]);               
-                        mesh.push_back(uv[i][11] * UV_HEIGHT + UV_HEIGHT * offset[i][1]);   
-                    }
+                    // Front face
+                    if(z == HEIGHT - 1 || blocks[x][y][z + 1] == 0) addBlockFace(x, y, z, 0, blocks[x][y][z]);
 
+                    // Back face
+                    if(z == 0 || blocks[x][y][z - 1] == 0) addBlockFace(x, y, z, 1, blocks[x][y][z]);
+                    
+                    // Top face
+                    if(y == WIDTH - 1 || blocks[x][y + 1][z] == 0) addBlockFace(x, y, z, 2, blocks[x][y][z]);
+                    
+                    // Bottom face
+                    if(y == 0 || blocks[x][y - 1][z] == 0) addBlockFace(x, y, z, 3, blocks[x][y][z]);
+
+                    // Right face
+                    if(x == LENGTH - 1 || blocks[x + 1][y][z] == 0) addBlockFace(x, y, z, 4, blocks[x][y][z]);
+
+                    // Left face
+                    if(x == 0 || blocks[x - 1][y][z] == 0) addBlockFace(x, y, z, 5, blocks[x][y][z]);
 
                 }
             }
@@ -227,6 +214,44 @@ public:
 
         
 
+    }
+
+    void addBlockFace(int x, int y, int z, int face, int type){
+        float cord[3] = {(float) x, (float) y, (float) z};
+
+        vector<float> offset = atlas->getBlockCoordinates(type, face);
+
+
+        // add a cube to the mesh, all 6 faces
+        int i = face;
+
+
+        // First triangle
+        for(int j = 0; j < 3; j++) mesh.push_back(verticies[i][j] + cord[j]);   // Vertex 1
+        mesh.push_back(uv[i][0] * atlas->UV_WIDTH + offset[0]);               
+        mesh.push_back(uv[i][1] * atlas->UV_HEIGHT + offset[1]);              
+
+        for(int j = 3; j < 6; j++) mesh.push_back(verticies[i][j] + cord[j - 3]);   // Vertex 2
+        mesh.push_back(uv[i][2] * atlas->UV_WIDTH + offset[0]);               
+        mesh.push_back(uv[i][3] * atlas->UV_HEIGHT + offset[1]);   
+        
+        for(int j = 6; j < 9; j++) mesh.push_back(verticies[i][j] + cord[j - 6]);   // Vertex 3
+        mesh.push_back(uv[i][4] * atlas->UV_WIDTH + offset[0]);               
+        mesh.push_back(uv[i][5] * atlas->UV_HEIGHT + offset[1]);   
+
+        // Second triangle
+        for(int j = 9; j < 12; j++) mesh.push_back(verticies[i][j] + cord[j - 9]);  // Vertex 4
+        mesh.push_back(uv[i][6] * atlas->UV_WIDTH + offset[0]);               
+        mesh.push_back(uv[i][7] * atlas->UV_HEIGHT + offset[1]);   
+
+        for(int j = 12; j < 15; j++) mesh.push_back(verticies[i][j] + cord[j - 12]); // Vertex 5
+        mesh.push_back(uv[i][8] * atlas->UV_WIDTH + offset[0]);               
+        mesh.push_back(uv[i][9] * atlas->UV_HEIGHT + offset[1]);   
+
+        for(int j = 15; j < 18; j++) mesh.push_back(verticies[i][j] + cord[j - 15]); // Vertex 6
+        mesh.push_back(uv[i][10] * atlas->UV_WIDTH + offset[0]);               
+        mesh.push_back(uv[i][11] * atlas->UV_HEIGHT + offset[1]);   
+        
     }
 
 
