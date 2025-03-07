@@ -2,6 +2,7 @@
 #include "header.h"
 #include <unordered_map>
 #include <array>
+#include <set>
 
 
 
@@ -33,6 +34,8 @@ private:
         return { (index % TEXTURE_WIDTH) * UV_WIDTH, (index / TEXTURE_HEIGHT) * UV_HEIGHT};
     }
 
+    std::set<int> transparentBlocks = {6, 7};
+
 public:
     float UV_WIDTH = 1.0f / (float)TEXTURE_WIDTH;
     float UV_HEIGHT = 1.0f / (float)TEXTURE_HEIGHT;
@@ -57,6 +60,10 @@ public:
             return {0.0f, 0.0f};
         }
         return getUVCoordinates(blockMap[blockType][face]);
+    }
+
+    bool isTransparent(int blockType){
+        return transparentBlocks.find(blockType) != transparentBlocks.end();
     }
 
 };

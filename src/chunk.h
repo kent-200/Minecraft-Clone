@@ -134,6 +134,9 @@ float uv[6][12] = {
 //     {1.0f, 0.0f}    // Left face
 // };
 
+// brightness - front, back, top, bottom, right, left
+float brightness[6] = {0.86f, 0.86f, 1.0f, 1.0f, 0.8f, 0.8f};
+
 using std::vector;
 
 
@@ -145,7 +148,8 @@ class Chunk {
     vector<vector<vector<int>>> blocks;
 
     glm::vec3 position;
-    std::vector<float> mesh;
+    std::vector<float> solidMesh;
+    std::vector<float> transparentMesh;
     Atlas * atlas;
 
 public:
@@ -174,19 +178,23 @@ public:
     }
 
 
-    std::vector<float> getMesh(){
-        return mesh;
+    std::vector<float> getSolidMesh(){
+        return solidMesh;
+    }
+
+    std::vector<float> getTransparentMesh(){
+        return transparentMesh;
     }
 
 
     void createMesh(){
-        mesh.clear();
+        solidMesh.clear();
+        transparentMesh.clear();
 
         for(int x = 0; x < LENGTH; x++){
             for(int y = 0; y < WIDTH; y++){
                 for(int z = 0; z < HEIGHT; z++){
                     if(blocks[x][y][z] == 0) continue;
-
 
                     // Front face
                     if(z == HEIGHT - 1 || blocks[x][y][z + 1] == 0) addBlockFace(x, y, z, 0, blocks[x][y][z]);
@@ -210,8 +218,8 @@ public:
             }
         }
 
-        std::cout << "Mesh size: " << mesh.size() << std::endl;
-
+        std::cout << "Solid Mesh size: " << solidMesh.size() << std::endl;
+        std::cout << "Transparent Mesh size: " << transparentMesh.size() << std::endl;
         
 
     }
@@ -222,36 +230,50 @@ public:
 
         vector<float> offset = atlas->getBlockCoordinates(type, face);
 
+        vector<float> * mesh;
+        if(atlas->isTransparent(type)){
+            mesh = &transparentMesh;
+        } else {
+            mesh = &solidMesh;
+        }
+
 
         // add a cube to the mesh, all 6 faces
         int i = face;
 
 
         // First triangle
-        for(int j = 0; j < 3; j++) mesh.push_back(verticies[i][j] + cord[j]);   // Vertex 1
-        mesh.push_back(uv[i][0] * atlas->UV_WIDTH + offset[0]);               
-        mesh.push_back(uv[i][1] * atlas->UV_HEIGHT + offset[1]);              
+        for(int j = 0; j < 3; j++) mesh->push_back(verticies[i][j] + cord[j]);   // Vertex 1
+        mesh->push_back(uv[i][0] * atlas->UV_WIDTH + offset[0]);               
+        mesh->push_back(uv[i][1] * atlas->UV_HEIGHT + offset[1]); 
+        mesh->push_back(brightness[i]);  // brightness
 
-        for(int j = 3; j < 6; j++) mesh.push_back(verticies[i][j] + cord[j - 3]);   // Vertex 2
-        mesh.push_back(uv[i][2] * atlas->UV_WIDTH + offset[0]);               
-        mesh.push_back(uv[i][3] * atlas->UV_HEIGHT + offset[1]);   
+
+        for(int j = 3; j < 6; j++) mesh->push_back(verticies[i][j] + cord[j - 3]);   // Vertex 2
+        mesh->push_back(uv[i][2] * atlas->UV_WIDTH + offset[0]);               
+        mesh->push_back(uv[i][3] * atlas->UV_HEIGHT + offset[1]);   
+        mesh->push_back(brightness[i]);  // brightness
         
-        for(int j = 6; j < 9; j++) mesh.push_back(verticies[i][j] + cord[j - 6]);   // Vertex 3
-        mesh.push_back(uv[i][4] * atlas->UV_WIDTH + offset[0]);               
-        mesh.push_back(uv[i][5] * atlas->UV_HEIGHT + offset[1]);   
+        for(int j = 6; j < 9; j++) mesh->push_back(verticies[i][j] + cord[j - 6]);   // Vertex 3
+        mesh->push_back(uv[i][4] * atlas->UV_WIDTH + offset[0]);               
+        mesh->push_back(uv[i][5] * atlas->UV_HEIGHT + offset[1]);   
+        mesh->push_back(brightness[i]);  // brightness
 
         // Second triangle
-        for(int j = 9; j < 12; j++) mesh.push_back(verticies[i][j] + cord[j - 9]);  // Vertex 4
-        mesh.push_back(uv[i][6] * atlas->UV_WIDTH + offset[0]);               
-        mesh.push_back(uv[i][7] * atlas->UV_HEIGHT + offset[1]);   
+        for(int j = 9; j < 12; j++) mesh->push_back(verticies[i][j] + cord[j - 9]);  // Vertex 4
+        mesh->push_back(uv[i][6] * atlas->UV_WIDTH + offset[0]);               
+        mesh->push_back(uv[i][7] * atlas->UV_HEIGHT + offset[1]);   
+        mesh->push_back(brightness[i]);  // brightness
 
-        for(int j = 12; j < 15; j++) mesh.push_back(verticies[i][j] + cord[j - 12]); // Vertex 5
-        mesh.push_back(uv[i][8] * atlas->UV_WIDTH + offset[0]);               
-        mesh.push_back(uv[i][9] * atlas->UV_HEIGHT + offset[1]);   
+        for(int j = 12; j < 15; j++) mesh->push_back(verticies[i][j] + cord[j - 12]); // Vertex 5
+        mesh->push_back(uv[i][8] * atlas->UV_WIDTH + offset[0]);               
+        mesh->push_back(uv[i][9] * atlas->UV_HEIGHT + offset[1]);   
+        mesh->push_back(brightness[i]);  // brightness
 
-        for(int j = 15; j < 18; j++) mesh.push_back(verticies[i][j] + cord[j - 15]); // Vertex 6
-        mesh.push_back(uv[i][10] * atlas->UV_WIDTH + offset[0]);               
-        mesh.push_back(uv[i][11] * atlas->UV_HEIGHT + offset[1]);   
+        for(int j = 15; j < 18; j++) mesh->push_back(verticies[i][j] + cord[j - 15]); // Vertex 6
+        mesh->push_back(uv[i][10] * atlas->UV_WIDTH + offset[0]);               
+        mesh->push_back(uv[i][11] * atlas->UV_HEIGHT + offset[1]); 
+        mesh->push_back(brightness[i]);  // brightness
         
     }
 

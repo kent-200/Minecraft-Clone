@@ -15,7 +15,7 @@ instance of this class is created in main.cpp
 
 class Render {
 private:
-	const int SHADER_INPUT_SIZE = 5;	// x, y, z, x, y	// number of floats per vertex passed as layout
+	const int SHADER_INPUT_SIZE = 6;	// x, y, z, ux, uy, shadow	// number of floats per vertex passed as layout
 
     // file paths
     std::string vertexShaderPath = "src/shaders/shader.vert";
@@ -128,14 +128,15 @@ private:
 		// for colors - layer 1
 		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, SHADER_INPUT_SIZE * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 		glEnableVertexAttribArray(1);
-
+		// for shadows - layer 2, 1 number
+		glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, SHADER_INPUT_SIZE * sizeof(GLfloat), (GLvoid*)(5 * sizeof(GLfloat)));
+		glEnableVertexAttribArray(2);
 
 		// Unbind the VAO
 		glBindVertexArray(0);
 
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LESS);
-
 
 	}
 
@@ -171,6 +172,7 @@ private:
 		glUseProgram(shaderProgram);
 		glUniform1i(textureLoc, 0);
 
+
 	}
 
 public:
@@ -188,13 +190,20 @@ public:
 
     // Render function, called to render the object 
     // format{ x y z r g b,} for 3 points, per triangle
-    bool renderData(glm::mat4 viewMatrix, std::vector<float> data){
+    bool renderData(glm::mat4 viewMatrix, std::vector<float> data, bool transparent = false){
         if(data.empty()){
-            std::cout << "Vertex Data is empty" << std::endl;
+           // std::cout << "Vertex Data is empty" << std::endl;
             return false;
         }
 
 		glm::mat4 worldMatrix = glm::mat4(1.0f);	// Form World Matrix
+
+		if(transparent){
+			glEnable(GL_BLEND);       // Enable blending for transparent objects
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  // Set blending function
+		} else {
+			glDisable(GL_BLEND);      // Disable blending for opaque objects
+		}
 		
 
 		// Use the shader program

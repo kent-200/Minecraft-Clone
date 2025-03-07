@@ -1,9 +1,12 @@
 #version 330 core
 in vec2 texCord;
+in float shadow;
+
 out vec4 finalColor;
 
 uniform sampler2D tex0;
 
 void main() {
-    finalColor = texture(tex0, texCord);
+    vec4 textureColour = texture(tex0, texCord);
+    finalColor = textureColour * shadow;
 }
