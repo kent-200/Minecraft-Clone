@@ -28,9 +28,6 @@ private:
 
 	vector<Chunk> chunks;
 
-
-
-
 public:
 	GameEngine3D(int w, int h){
 		windowWidth = w;
@@ -243,8 +240,8 @@ public:
 
 			// render 3d scene
 			for(auto &chunk : chunks){
-				render.renderData(camera.viewMatrix(), chunk.getSolidMesh(), false);
-				render.renderData(camera.viewMatrix(), chunk.getTransparentMesh(), true);
+				render.renderData(camera.viewMatrix(), chunk.getSolidVerticies(), chunk.getSolidIndicies(), false);
+				render.renderData(camera.viewMatrix(), chunk.getTransparentVerticies(), chunk.getTransparentIndicies(), true);
 			}
 
 

@@ -24,7 +24,7 @@ private:
 	std::string texturePath = "src/textures/blocks.png";
 
     GLuint shaderProgram;
-    GLuint VAO, VBO;
+    GLuint VAO, VBO, EBO;
 	GLuint texture;
 
     glm::mat4 projectionMatrix;
@@ -119,7 +119,13 @@ private:
 		// Create a Vertex Buffer Object and copy the vertex data to it
 		glGenBuffers(1, &VBO);
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW); // will be updated later
+
+		// create an Element Buffer Object
+		glGenBuffers(1, &EBO);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);	// will be updated later
+
 
 		// define the vertex attribute pointer
 		// for positions - layer 0
@@ -190,8 +196,8 @@ public:
 
     // Render function, called to render the object 
     // format{ x y z r g b,} for 3 points, per triangle
-    bool renderData(glm::mat4 viewMatrix, std::vector<float> data, bool transparent = false){
-        if(data.empty()){
+    bool renderData(glm::mat4 viewMatrix, std::vector<float> verticies, std::vector<unsigned int> indicies, bool transparent = false){
+        if(verticies.empty() || indicies.empty()){
            // std::cout << "Vertex Data is empty" << std::endl;
             return false;
         }
@@ -226,13 +232,20 @@ public:
 		// 5. Update Vertex Buffer Object (VBO) - new data
 		// use method: glBufferSubData not glMapBuffer
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(float), data.data(), GL_DYNAMIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, verticies.size() * sizeof(float), verticies.data(), GL_DYNAMIC_DRAW);
+		// glBufferSubData(GL_ARRAY_BUFFER, 0, verticies.size() * sizeof(float), verticies.data());
 
 
-		// 6. render the object
+		// 6. Update Element Buffer Object (EBO) - new data
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicies.size() * sizeof(unsigned int), indicies.data(), GL_DYNAMIC_DRAW);
+		// glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, indicies.size() * sizeof(unsigned int), indicies.data());
+
+
+		// 7. Render the object
 		glBindVertexArray(VAO);
-		//glDrawArraysInstanced
-		glDrawArrays(GL_TRIANGLES, 0, data.size() / SHADER_INPUT_SIZE);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glDrawElements(GL_TRIANGLES, indicies.size(), GL_UNSIGNED_INT, nullptr);
 		glBindVertexArray(0);
 
 		return true;
@@ -245,6 +258,7 @@ public:
 	void destroy(){
 		glDeleteVertexArrays(1, &VAO);
 		glDeleteBuffers(1, &VBO);
+		glDeleteBuffers(1, &EBO);
 		glDeleteProgram(shaderProgram);
 
 		// Clean up and exit

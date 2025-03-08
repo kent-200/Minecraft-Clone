@@ -12,118 +12,68 @@ creates/cache mesh data for solid and transparent blocks
 
 */
 
-float verticies[6][18] = {
+// note 8 verticies per cube
+float vertices[6][4][3] = {
+    { {0,0,0}, {1,0,0}, {1,1,0}, {0,1,0} }, // Front
+    { {0,0,1}, {1,0,1}, {1,1,1}, {0,1,1} }, // Back
+    { {0,1,0}, {1,1,0}, {1,1,1}, {0,1,1} }, // Top
+    { {0,0,0}, {1,0,0}, {1,0,1}, {0,0,1} }, // Bottom
+    { {1,0,0}, {1,0,1}, {1,1,1}, {1,1,0} }, // Right
+    { {0,0,0}, {0,0,1}, {0,1,1}, {0,1,0} }  // Left
+};
+
+// need seperate uv coordinates for each face due to orientation 
+float uv[6][4][2] = {
+
+    // Front face
     {
-        // Front face
-        1.0f, 0.0f, 1.0f,  // Triangle 1
-        0.0f, 1.0f, 1.0f,
-        0.0f, 0.0f, 1.0f,
-        1.0f, 0.0f, 1.0f,  // Triangle 2
-        1.0f, 1.0f, 1.0f,
-        0.0f, 1.0f, 1.0f
+        {0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f}
     },
+
+    // Back face
     {
-        // Back face
-        0.0f, 0.0f, 0.0f,  // Triangle 3
-        0.0f, 1.0f, 0.0f,
-        1.0f, 0.0f, 0.0f,
-        0.0f, 1.0f, 0.0f,  // Triangle 4
-        1.0f, 1.0f, 0.0f,
-        1.0f, 0.0f, 0.0f
+        {0.0f, 1.0f},
+        {1.0f, 1.0f},
+        {1.0f, 0.0f},
+        {0.0f, 0.0f}
     },
+
+    // Top face
     {
-        // Top face
-        1.0f, 1.0f, 0.0f,  // Triangle 5
-        0.0f, 1.0f, 0.0f,
-        0.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 0.0f,  // Triangle 6
-        0.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f
+        {0.0f, 0.0f},
+        {1.0f, 0.0f},
+        {1.0f, 1.0f},
+        {0.0f, 1.0f}
     },
+
+    // Bottom face
     {
-        // Bottom face 
-        0.0f, 0.0f, 0.0f,  // Triangle 7
-        0.0f, 0.0f, 1.0f,
-        1.0f, 0.0f, 1.0f,
-        0.0f, 0.0f, 0.0f,  // Triangle 8
-        1.0f, 0.0f, 1.0f,
-        1.0f, 0.0f, 0.0f
+        {0.0f, 0.0f},
+        {1.0f, 0.0f},
+        {1.0f, 1.0f},
+        {0.0f, 1.0f}
     },
+
+    // Right face
     {
-        // Right face
-        1.0f, 0.0f, 0.0f,  // Triangle 9
-        1.0f, 0.0f, 1.0f,
-        1.0f, 1.0f, 0.0f,
-        1.0f, 1.0f, 0.0f,
-        1.0f, 0.0f, 1.0f,  // Triangle 10
-        1.0f, 1.0f, 1.0f
+        {0.0f, 1.0f},
+        {1.0f, 1.0f},
+        {1.0f, 0.0f},
+        {0.0f, 0.0f}
     },
+
+    // Left face
     {
-        // Left face
-        0.0f, 0.0f, 0.0f,  // Triangle 11
-        0.0f, 1.0f, 0.0f,
-        0.0f, 0.0f, 1.0f,
-        0.0f, 0.0f, 1.0f,
-        0.0f, 1.0f, 0.0f,  // Triangle 12
-        0.0f, 1.0f, 1.0f
+        {0.0f, 1.0f},
+        {1.0f, 1.0f},
+        {1.0f, 0.0f},
+        {0.0f, 0.0f}
     }
 };
 
-float uv[6][12] = {
-    {
-        // Front face
-        1.0f, 1.0f,  // Triangle 1
-        0.0f, 0.0f,
-        0.0f, 1.0f,
-        1.0f, 1.0f,  // Triangle 2
-        1.0f, 0.0f,
-        0.0f, 0.0f,
-    },
-    {
-        // Back face
-        1.0f, 1.0f,  // Triangle 3
-        1.0f, 0.0f,
-        0.0f, 1.0f, 
-        1.0f, 0.0f,  // Triangle 4
-        0.0f, 0.0f,
-        0.0f, 1.0f,
-    },
-    {
-        // Top face
-        0.0f, 1.0f,  // Triangle 5
-        1.0f, 1.0f,
-        1.0f, 0.0f,
-        0.0f, 1.0f,  // Triangle 6
-        1.0f, 0.0f,
-        0.0f, 0.0f
-    },
-    {
-        // Bottom face
-        1.0f, 1.0f,   // Triangle 7
-        1.0f, 0.0f, 
-        0.0f, 0.0f, 
-        1.0f, 1.0f,   // Triangle 8
-        0.0f, 0.0f, 
-        0.0f, 1.0f
-    },
-    {
-        // Right face
-        1.0f, 1.0f,   // Triangle 9
-        0.0f, 1.0f, 
-        1.0f, 0.0f, 
-        1.0f, 0.0f,   // Triangle 10
-        0.0f, 1.0f, 
-        0.0f, 0.0f
-    },
-    {
-        // Left face
-        0.0f, 1.0f,   // Triangle 11
-        0.0f, 0.0f, 
-        1.0f, 1.0f, 
-        1.0f, 1.0f,   // Triangle 12
-        0.0f, 0.0f, 
-        1.0f, 0.0f
-    }
+float indicies[2][3] = {
+    {0, 1, 2},
+    {0, 2, 3}
 };
 
 
@@ -139,10 +89,14 @@ class Chunk {
     const int HEIGHT = 16;
 
     vector<vector<vector<int>>> blocks;
-
     glm::vec3 position;
-    std::vector<float> solidMesh;
-    std::vector<float> transparentMesh;
+
+    std::vector<float> solidVerticies;
+    std::vector<unsigned int> solidIndicies;
+
+    std::vector<float> transparentVerticies;
+    std::vector<unsigned int> transparentIndicies;
+
     Atlas * atlas;
 
 public:
@@ -171,18 +125,28 @@ public:
     }
 
 
-    std::vector<float> getSolidMesh(){
-        return solidMesh;
+    std::vector<float> getSolidVerticies(){
+        return solidVerticies;
     }
 
-    std::vector<float> getTransparentMesh(){
-        return transparentMesh;
+    std::vector<unsigned int> getSolidIndicies(){
+        return solidIndicies;
+    }
+
+    std::vector<float> getTransparentVerticies(){
+        return transparentVerticies;
+    }
+
+    std::vector<unsigned int> getTransparentIndicies(){
+        return transparentIndicies;
     }
 
 
     void createMesh(){
-        solidMesh.clear();
-        transparentMesh.clear();
+        solidVerticies.clear();
+        solidIndicies.clear();
+        transparentVerticies.clear();
+        transparentIndicies.clear();
 
         for(int x = 0; x < LENGTH; x++){
             for(int y = 0; y < WIDTH; y++){
@@ -191,12 +155,13 @@ public:
 
                     // only add face if visible
                     // TODO: check other chunks
+                    // TODO: check if block next to is transparent, then would need to add
 
                     // Front face
-                    if(z == HEIGHT - 1 || blocks[x][y][z + 1] == 0) addBlockFace(x, y, z, 0, blocks[x][y][z]);
+                    if(z == 0 || blocks[x][y][z - 1] == 0) addBlockFace(x, y, z, 0, blocks[x][y][z]);
 
                     // Back face
-                    if(z == 0 || blocks[x][y][z - 1] == 0) addBlockFace(x, y, z, 1, blocks[x][y][z]);
+                    if(z == HEIGHT - 1 || blocks[x][y][z + 1] == 0) addBlockFace(x, y, z, 1, blocks[x][y][z]);
                     
                     // Top face
                     if(y == WIDTH - 1 || blocks[x][y + 1][z] == 0) addBlockFace(x, y, z, 2, blocks[x][y][z]);
@@ -214,8 +179,8 @@ public:
             }
         }
 
-        std::cout << "Solid Mesh size: " << solidMesh.size() << std::endl;
-        std::cout << "Transparent Mesh size: " << transparentMesh.size() << std::endl;
+        std::cout << "Solid Mesh size: " << solidIndicies.size() << std::endl;
+        std::cout << "Transparent Mesh size: " << transparentIndicies.size() << std::endl;
         
 
     }
@@ -226,50 +191,44 @@ public:
 
         vector<float> offset = atlas->getBlockCoordinates(type, face);
 
-        vector<float> * mesh;
+        vector<float> * verticies;
+        vector<unsigned int> * indicies;
         if(atlas->isTransparent(type)){
-            mesh = &transparentMesh;
+            verticies = &transparentVerticies;
+            indicies = &transparentIndicies;
         } else {
-            mesh = &solidMesh;
+            verticies = &solidVerticies;
+            indicies = &solidIndicies;
+        } 
+
+        int indexOffset = verticies->size() / 6;
+
+
+
+        // add face verticies
+        for(int i = 0; i < 4; i++){
+            // 3 values for x, y, z
+            verticies->push_back(cord[0] + vertices[face][i][0]);
+            verticies->push_back(cord[1] + vertices[face][i][1]);
+            verticies->push_back(cord[2] + vertices[face][i][2]);
+            
+            // 2 values for u, v
+            verticies->push_back(uv[face][i][0] * atlas->UV_WIDTH + offset[0]);
+            verticies->push_back(uv[face][i][1] * atlas->UV_HEIGHT + offset[1]);
+
+            // 1 value for brightness of texture
+            verticies->push_back(brightness[face]);
         }
 
+        // add face indicies
+        // Add indices for two triangles
+        indicies->push_back(indexOffset);
+        indicies->push_back(indexOffset + 1);
+        indicies->push_back(indexOffset + 2);
+        indicies->push_back(indexOffset);
+        indicies->push_back(indexOffset + 2);
+        indicies->push_back(indexOffset + 3);
 
-        // add a cube to the mesh, all 6 faces
-        int i = face;
-
-
-        // First triangle
-        for(int j = 0; j < 3; j++) mesh->push_back(verticies[i][j] + cord[j]);   // Vertex 1
-        mesh->push_back(uv[i][0] * atlas->UV_WIDTH + offset[0]);               
-        mesh->push_back(uv[i][1] * atlas->UV_HEIGHT + offset[1]); 
-        mesh->push_back(brightness[i]);  // brightness
-
-
-        for(int j = 3; j < 6; j++) mesh->push_back(verticies[i][j] + cord[j - 3]);   // Vertex 2
-        mesh->push_back(uv[i][2] * atlas->UV_WIDTH + offset[0]);               
-        mesh->push_back(uv[i][3] * atlas->UV_HEIGHT + offset[1]);   
-        mesh->push_back(brightness[i]);  // brightness
-        
-        for(int j = 6; j < 9; j++) mesh->push_back(verticies[i][j] + cord[j - 6]);   // Vertex 3
-        mesh->push_back(uv[i][4] * atlas->UV_WIDTH + offset[0]);               
-        mesh->push_back(uv[i][5] * atlas->UV_HEIGHT + offset[1]);   
-        mesh->push_back(brightness[i]);  // brightness
-
-        // Second triangle
-        for(int j = 9; j < 12; j++) mesh->push_back(verticies[i][j] + cord[j - 9]);  // Vertex 4
-        mesh->push_back(uv[i][6] * atlas->UV_WIDTH + offset[0]);               
-        mesh->push_back(uv[i][7] * atlas->UV_HEIGHT + offset[1]);   
-        mesh->push_back(brightness[i]);  // brightness
-
-        for(int j = 12; j < 15; j++) mesh->push_back(verticies[i][j] + cord[j - 12]); // Vertex 5
-        mesh->push_back(uv[i][8] * atlas->UV_WIDTH + offset[0]);               
-        mesh->push_back(uv[i][9] * atlas->UV_HEIGHT + offset[1]);   
-        mesh->push_back(brightness[i]);  // brightness
-
-        for(int j = 15; j < 18; j++) mesh->push_back(verticies[i][j] + cord[j - 15]); // Vertex 6
-        mesh->push_back(uv[i][10] * atlas->UV_WIDTH + offset[0]);               
-        mesh->push_back(uv[i][11] * atlas->UV_HEIGHT + offset[1]); 
-        mesh->push_back(brightness[i]);  // brightness
         
     }
 
