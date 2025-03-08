@@ -30,21 +30,3 @@
 #include "../lib/imgui/backends/imgui_impl_opengl3.h"
 
 
-
-
-
-class Triangle {
-public:
-	glm::vec3 p[3];
-	float col;
-
-	Triangle(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3) {
-		p[0] = p1;
-		p[1] = p2;
-		p[2] = p3;
-		col = 0.5f;
-	}
-};
-
-
-

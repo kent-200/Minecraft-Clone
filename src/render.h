@@ -8,7 +8,7 @@
 
 /*
 Render
-has all opengl rendering functions, manages shaders and buffers
+has all opengl rendering functions, manages loading shaders, images and rendering 
 instance of this class is created in main.cpp
 */
 

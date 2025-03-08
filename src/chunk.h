@@ -3,9 +3,11 @@
 
 /*
 Chunk
-- block types [16][16][16]
+stores blocks in chunk [16][16][16]
 
-- mesh 
+stores block rendering information
+uses atlas to get block texture coordinates for mesh
+creates/cache mesh data for solid and transparent blocks
 
 
 */
@@ -124,17 +126,8 @@ float uv[6][12] = {
     }
 };
 
-// // x, y - FOR GRASS BLOCK   
-// float offset[6][2] = {
-//     {1.0f, 0.0f},   // Front face
-//     {1.0f, 0.0f},   // Back face
-//     {0.0f, 0.0f},   // Top face
-//     {2.0f, 0.0f},   // Bottom face
-//     {1.0f, 0.0f},   // Right face
-//     {1.0f, 0.0f}    // Left face
-// };
 
-// brightness - front, back, top, bottom, right, left
+// brightness for block face - front, back, top, bottom, right, left
 float brightness[6] = {0.86f, 0.86f, 1.0f, 1.0f, 0.8f, 0.8f};
 
 using std::vector;
@@ -195,6 +188,9 @@ public:
             for(int y = 0; y < WIDTH; y++){
                 for(int z = 0; z < HEIGHT; z++){
                     if(blocks[x][y][z] == 0) continue;
+
+                    // only add face if visible
+                    // TODO: check other chunks
 
                     // Front face
                     if(z == HEIGHT - 1 || blocks[x][y][z + 1] == 0) addBlockFace(x, y, z, 0, blocks[x][y][z]);

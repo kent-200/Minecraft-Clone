@@ -1,6 +1,12 @@
 #pragma once
 #include "header.h"
 
+/*
+Camera class
+holds all related variables, all public for now
+creates view matrix
+*/
+
 class Camera {
 public:
     glm::vec3 pos;	// Location of camera in world space
@@ -40,9 +46,5 @@ public:
         // Create and return the view matrix using glm::lookAt
         return glm::lookAt(pos, target, up);
     }
-
-    
-
-
 
 };
