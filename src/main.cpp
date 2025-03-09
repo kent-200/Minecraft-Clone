@@ -9,6 +9,9 @@ Last Update: 2/03/2025
 #include "camera.h"
 #include "render.h"
 #include "chunk.h"
+#include "chunkManager.h"
+#include "atlas.h"
+#include "terrainGenerator.h"
 
 
 using namespace std;
@@ -25,23 +28,14 @@ private:
 	GLFWwindow* window;
 	Render render;
 	Atlas atlas;
+	TerrainGenerator terrainGenerator = TerrainGenerator(&atlas);
+	ChunkManager chunkManager = ChunkManager(terrainGenerator);
 
-	vector<Chunk> chunks;
 
 public:
 	GameEngine3D(int w, int h){
 		windowWidth = w;
 		windowHeight = h;
-
-		// create chunks
-		chunks.push_back(Chunk({0, 0, 0}, &atlas, 1));
-		chunks.push_back(Chunk({1, 0, 0}, &atlas, 2));
-		chunks.push_back(Chunk({0, 0, 1}, &atlas, 3));
-		chunks.push_back(Chunk({1, 0, 1}, &atlas, 4));
-		chunks.push_back(Chunk({2, 0, 0}, &atlas, 5));
-		chunks.push_back(Chunk({2, 0, 1}, &atlas, 6));
-		chunks.push_back(Chunk({2, 0, 2}, &atlas, 7));
-
 
 		// Initialize GLFW
 		if (!glfwInit()) {
@@ -100,11 +94,6 @@ public:
 			exit(-1);
 		}
 
-
-		for(auto &chunk : chunks){
-			chunk.createMesh();
-		}
-		//cout << chunk.getMesh().size() << endl;
 
 	}
 
@@ -239,10 +228,8 @@ public:
 
 
 			// render 3d scene
-			for(auto &chunk : chunks){
-				render.renderData(camera.viewMatrix(), chunk.getSolidVerticies(), chunk.getSolidIndicies(), false);
-				render.renderData(camera.viewMatrix(), chunk.getTransparentVerticies(), chunk.getTransparentIndicies(), true);
-			}
+			// use chunk manager to render
+			chunkManager.renderWorld(render, camera.pos, camera.viewMatrix());
 
 
 			// Render ImGui ontop

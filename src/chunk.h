@@ -1,3 +1,4 @@
+#pragma once
 #include "header.h"
 #include "atlas.h"
 
@@ -26,55 +27,28 @@ float vertices[6][4][3] = {
 float uv[6][4][2] = {
 
     // Front face
-    {
-        {0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f}
-    },
+    {{0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f}},
 
     // Back face
-    {
-        {0.0f, 1.0f},
-        {1.0f, 1.0f},
-        {1.0f, 0.0f},
-        {0.0f, 0.0f}
-    },
+    { {0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f} },
 
     // Top face
-    {
-        {0.0f, 0.0f},
-        {1.0f, 0.0f},
-        {1.0f, 1.0f},
-        {0.0f, 1.0f}
-    },
+    {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f},{0.0f, 1.0f}},
 
     // Bottom face
-    {
-        {0.0f, 0.0f},
-        {1.0f, 0.0f},
-        {1.0f, 1.0f},
-        {0.0f, 1.0f}
-    },
+    {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}},
 
     // Right face
-    {
-        {0.0f, 1.0f},
-        {1.0f, 1.0f},
-        {1.0f, 0.0f},
-        {0.0f, 0.0f}
-    },
+    {{0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f}},
 
     // Left face
-    {
-        {0.0f, 1.0f},
-        {1.0f, 1.0f},
-        {1.0f, 0.0f},
-        {0.0f, 0.0f}
-    }
+    {{0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f}}
 };
 
-float indicies[2][3] = {
-    {0, 1, 2},
-    {0, 2, 3}
-};
+// const float indicies[2][3] = {
+//     {0, 1, 2},
+//     {0, 2, 3}
+// };
 
 
 // brightness for block face - front, back, top, bottom, right, left
@@ -142,6 +116,8 @@ public:
     }
 
 
+    // create mesh data for chunk
+    // need to consider other chunks
     void createMesh(){
         solidVerticies.clear();
         solidIndicies.clear();
@@ -228,11 +204,8 @@ public:
         indicies->push_back(indexOffset);
         indicies->push_back(indexOffset + 2);
         indicies->push_back(indexOffset + 3);
-
         
     }
-
-
 
 
 };

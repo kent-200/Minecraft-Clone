@@ -178,7 +178,6 @@ private:
 		glUseProgram(shaderProgram);
 		glUniform1i(textureLoc, 0);
 
-
 	}
 
 public:
@@ -190,6 +189,11 @@ public:
 		shaderInit();
         createBuffers();
 		loadTexture();
+
+		glUseProgram(shaderProgram);
+		// set projection matrix in shader
+		GLint projLoc = glGetUniformLocation(shaderProgram, "projection");
+		glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
 		return true;
 	}
 
@@ -202,7 +206,8 @@ public:
             return false;
         }
 
-		glm::mat4 worldMatrix = glm::mat4(1.0f);	// Form World Matrix
+		// defined in shader
+		//glm::mat4 worldMatrix = glm::mat4(1.0f);	// Form World Matrix
 
 		if(transparent){
 			glEnable(GL_BLEND);       // Enable blending for transparent objects
@@ -221,25 +226,22 @@ public:
 
 
 		// Pass matrices to the shader
-		GLint modelLoc = glGetUniformLocation(shaderProgram, "model");
+		//GLint modelLoc = glGetUniformLocation(shaderProgram, "model");	// define in shader for performace
 		GLint viewLoc = glGetUniformLocation(shaderProgram, "view");
-		GLint projLoc = glGetUniformLocation(shaderProgram, "projection");
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(worldMatrix));
+		// GLint projLoc = glGetUniformLocation(shaderProgram, "projection");	// passed at start
 		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(viewMatrix));
-		glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+		// glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
 
 
 		// 5. Update Vertex Buffer Object (VBO) - new data
 		// use method: glBufferSubData not glMapBuffer
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
 		glBufferData(GL_ARRAY_BUFFER, verticies.size() * sizeof(float), verticies.data(), GL_DYNAMIC_DRAW);
-		// glBufferSubData(GL_ARRAY_BUFFER, 0, verticies.size() * sizeof(float), verticies.data());
 
 
 		// 6. Update Element Buffer Object (EBO) - new data
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicies.size() * sizeof(unsigned int), indicies.data(), GL_DYNAMIC_DRAW);
-		// glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, indicies.size() * sizeof(unsigned int), indicies.data());
 
 
 		// 7. Render the object

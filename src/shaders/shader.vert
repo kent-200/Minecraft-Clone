@@ -6,7 +6,7 @@ layout(location = 2) in float shadowInput;
 out vec2 texCord;
 out float shadow;
 
-uniform mat4 model;
+mat4 model = mat4(1.0); // define in vertex
 uniform mat4 view;
 uniform mat4 projection;
 
