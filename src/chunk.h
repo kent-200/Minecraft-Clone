@@ -15,11 +15,11 @@ creates/cache mesh data for solid and transparent blocks
 
 // note 8 verticies per cube
 float vertices[6][4][3] = {
-    { {0,0,0}, {1,0,0}, {1,1,0}, {0,1,0} }, // Front
-    { {0,0,1}, {1,0,1}, {1,1,1}, {0,1,1} }, // Back
-    { {0,1,0}, {1,1,0}, {1,1,1}, {0,1,1} }, // Top
+    { {0,0,0}, {0,1,0}, {1,1,0}, {1,0,0} }, // Back with reverse winding
+    { {0,0,1}, {1,0,1}, {1,1,1}, {0,1,1} }, // Front
+    { {0,1,1}, {1,1,1}, {1,1,0}, {0,1,0} },  // Top face with reversed winding
     { {0,0,0}, {1,0,0}, {1,0,1}, {0,0,1} }, // Bottom
-    { {1,0,0}, {1,0,1}, {1,1,1}, {1,1,0} }, // Right
+    { {1,0,0}, {1,1,0}, {1,1,1}, {1,0,1} },  // Right face with reversed winding
     { {0,0,0}, {0,0,1}, {0,1,1}, {0,1,0} }  // Left
 };
 
@@ -27,10 +27,10 @@ float vertices[6][4][3] = {
 float uv[6][4][2] = {
 
     // Front face
-    {{0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f}},
+    { {0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f} },
 
     // Back face
-    { {0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f} },
+    { {0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f}},
 
     // Top face
     {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f},{0.0f, 1.0f}},
@@ -39,7 +39,7 @@ float uv[6][4][2] = {
     {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}},
 
     // Right face
-    {{0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{1.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 1.0f}},
 
     // Left face
     {{0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f}}
@@ -133,11 +133,7 @@ public:
                     if(blocks[x][y][z] == 0) continue;
 
                     // only add face if visible
-                    // TODO: check other chunks
                     // TODO: check if block next to is transparent, then would need to add
-
-                    // change to checking indiv blocks
-
                     // Front face
                     // for z = 0, check chunk next to, otherwise check block in front
                     if(z == 0){

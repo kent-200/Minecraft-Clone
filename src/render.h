@@ -210,10 +210,14 @@ public:
 		//glm::mat4 worldMatrix = glm::mat4(1.0f);	// Form World Matrix
 
 		if(transparent){
+			glDisable(GL_CULL_FACE);	
 			glEnable(GL_BLEND);       // Enable blending for transparent objects
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  // Set blending function
 		} else {
 			glDisable(GL_BLEND);      // Disable blending for opaque objects
+			glEnable(GL_CULL_FACE);   // Enable backface culling
+			glCullFace(GL_BACK);      // Cull back faces
+			glFrontFace(GL_CCW);      
 		}
 		
 
