@@ -30,12 +30,23 @@ private:
     // when generating chunks create their mesh and store in chunk
 
 
+    
+    
+public:
+    
     // fix this
     int chunkIndex(glm::vec3 position){
         return (position.x * 16 * 16) + (position.y * 16) + position.z;
     }
 
-public:
+    Chunk * getChunk(glm::vec3 position){
+        if(chunkMap.count(chunkIndex(position)) == 0){
+            return nullptr;
+        }
+        return chunkMap[chunkIndex(position)];
+    }
+
+
     ChunkManager(TerrainGenerator & terrainGenerator){
         // generate chunks around 0, 0, 0
         for(int x = -renderDistance; x < renderDistance; x++){
@@ -47,7 +58,17 @@ public:
                     int index = chunkIndex(position);
                     //addChunkToQueue(position);
                     chunkMap[index] = new Chunk(terrainGenerator.generateChunk(position));
-                    chunkMap[index]->createMesh();  //change how this words
+                }
+            }
+        }
+
+        this->placeBlock(glm::vec3(20, 20, 20), 0);
+        // change how this works
+        for(int x = -renderDistance; x < renderDistance; x++){
+            for(int y = 0; y < worldChunkHeight; y++){
+                for(int z = -renderDistance; z < renderDistance; z++){
+                    // createMesh(front, back, top, bottom, right, left)
+                    chunkMap[chunkIndex(glm::vec3(x, y, z))]->createMesh(getChunk(glm::vec3(x, y, z + 1)), getChunk(glm::vec3(x, y, z - 1)), getChunk(glm::vec3(x, y + 1, z)), getChunk(glm::vec3(x, y - 1, z)), getChunk(glm::vec3(x + 1, y, z)), getChunk(glm::vec3(x - 1, y, z)));
                 }
             }
         }
@@ -83,9 +104,24 @@ public:
         return renderQueue;
     }
 
+    int getBlock(glm::vec3 position){
+        glm::vec3 chunkPosition = glm::vec3(floor(position.x / 16), floor(position.y / 16), floor(position.z / 16));
+        glm::vec3 blockPosition = glm::vec3(position.x - chunkPosition.x * 16, position.y - chunkPosition.y * 16, position.z - chunkPosition.z * 16);
+        Chunk * chunk = getChunk(chunkPosition);
+        if(chunk == nullptr) return 0;
+        return chunk->getBlock(blockPosition.x, blockPosition.y, blockPosition.z);
+    }
+
 
     // place block
     void placeBlock(glm::vec3 position, int type) {
+        glm::vec3 chunkPosition = glm::vec3(floor(position.x / 16), floor(position.y / 16), floor(position.z / 16));
+        glm::vec3 blockPosition = glm::vec3(position.x - chunkPosition.x * 16, position.y - chunkPosition.y * 16, position.z - chunkPosition.z * 16);
+        Chunk * chunk = getChunk(chunkPosition);
+        if(chunk == nullptr) return;
+        chunk->setBlock(blockPosition.x, blockPosition.y, blockPosition.z, type);
+
+        // upate mesh
 
     }
 

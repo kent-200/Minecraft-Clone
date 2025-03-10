@@ -57,6 +57,8 @@ float brightness[6] = {0.86f, 0.86f, 1.0f, 1.0f, 0.8f, 0.8f};
 using std::vector;
 
 
+
+
 class Chunk {
     const int LENGTH = 16;
     const int WIDTH = 16;
@@ -118,7 +120,8 @@ public:
 
     // create mesh data for chunk
     // need to consider other chunks
-    void createMesh(){
+    // access manager to get other chunks
+    void createMesh(Chunk * frontChunk, Chunk * backChunk, Chunk * topChunk, Chunk * bottomChunk, Chunk * rightChunk, Chunk * leftChunk){
         solidVerticies.clear();
         solidIndicies.clear();
         transparentVerticies.clear();
@@ -133,23 +136,56 @@ public:
                     // TODO: check other chunks
                     // TODO: check if block next to is transparent, then would need to add
 
-                    // Front face
-                    if(z == 0 || blocks[x][y][z - 1] == 0) addBlockFace(x, y, z, 0, blocks[x][y][z]);
+                    // change to checking indiv blocks
 
+                    // Front face
+                    // for z = 0, check chunk next to, otherwise check block in front
+                    if(z == 0){
+                        if(backChunk == nullptr || backChunk->getBlock(x, y, LENGTH - 1) == 0) addBlockFace(x, y, z, 0, blocks[x][y][z]);
+                    } else {
+                        if(blocks[x][y][z - 1] == 0) addBlockFace(x, y, z, 0, blocks[x][y][z]);
+                    }
+
+                   
                     // Back face
-                    if(z == HEIGHT - 1 || blocks[x][y][z + 1] == 0) addBlockFace(x, y, z, 1, blocks[x][y][z]);
+                    if(z == LENGTH - 1){
+                        if(frontChunk == nullptr || frontChunk->getBlock(x, y, 0) == 0) addBlockFace(x, y, z, 1, blocks[x][y][z]);
+                    } else {
+                        if(blocks[x][y][z + 1] == 0) addBlockFace(x, y, z, 1, blocks[x][y][z]);
+                    }
                     
                     // Top face
-                    if(y == WIDTH - 1 || blocks[x][y + 1][z] == 0) addBlockFace(x, y, z, 2, blocks[x][y][z]);
+                    if(y == HEIGHT - 1){
+                        if(topChunk == nullptr || topChunk->getBlock(x, 0, z) == 0) addBlockFace(x, y, z, 2, blocks[x][y][z]);
+                    } else {
+                        if(blocks[x][y + 1][z] == 0) addBlockFace(x, y, z, 2, blocks[x][y][z]);
+                    }
+             
                     
                     // Bottom face
-                    if(y == 0 || blocks[x][y - 1][z] == 0) addBlockFace(x, y, z, 3, blocks[x][y][z]);
+                    if(y == 0){
+                        if(bottomChunk == nullptr || bottomChunk->getBlock(x, HEIGHT - 1, z) == 0) addBlockFace(x, y, z, 3, blocks[x][y][z]);
+                    } else {
+                        if(blocks[x][y - 1][z] == 0) addBlockFace(x, y, z, 3, blocks[x][y][z]);
+                    }
+
+
 
                     // Right face
-                    if(x == LENGTH - 1 || blocks[x + 1][y][z] == 0) addBlockFace(x, y, z, 4, blocks[x][y][z]);
+                    if(x == WIDTH - 1){
+                        if(rightChunk == nullptr || rightChunk->getBlock(0, y, z) == 0) addBlockFace(x, y, z, 4, blocks[x][y][z]);
+                    } else {
+                        if(blocks[x + 1][y][z] == 0) addBlockFace(x, y, z, 4, blocks[x][y][z]);
+                    }
+
+
 
                     // Left face
-                    if(x == 0 || blocks[x - 1][y][z] == 0) addBlockFace(x, y, z, 5, blocks[x][y][z]);
+                    if(x == 0){
+                        if(leftChunk == nullptr || leftChunk->getBlock(WIDTH - 1, y, z) == 0) addBlockFace(x, y, z, 5, blocks[x][y][z]);
+                    } else {
+                        if(blocks[x - 1][y][z] == 0) addBlockFace(x, y, z, 5, blocks[x][y][z]);
+                    }
 
                 }
             }

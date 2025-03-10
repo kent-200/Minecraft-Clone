@@ -72,7 +72,7 @@ public:
 
 		// Initialize ImGui
 		IMGUI_CHECKVERSION();
-		ImGui::CreateContext();
+		ImGui::CreateContext(); 
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
 		io.IniFilename = NULL;
 		// io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
@@ -160,7 +160,7 @@ public:
 				camera.fPitch = -1.5f;
 			}
 
-			glm::vec3 vForward = camera.lookDir * (8.0f * fElapsedTime);
+			glm::vec3 vForward = camera.lookDir * (30.0f * fElapsedTime);
 			glm::vec3 vRight = { camera.lookDir.z, 0, -camera.lookDir.x };
 			vRight = vRight * (8.0f * fElapsedTime);
 
