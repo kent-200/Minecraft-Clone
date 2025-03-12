@@ -109,6 +109,11 @@ public:
 		double lastX = 0.0;
 		double lastY = 0.0;
 
+		// screen size
+		int screenWidth, screenHeight;
+		glfwGetFramebufferSize(window, &screenWidth, &screenHeight);
+		glViewport(0, 0, screenWidth, screenHeight);
+
 		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 		int fps_update = 0;
@@ -118,6 +123,15 @@ public:
 
 		while (!glfwWindowShouldClose(window)){
 			// Run as fast as possible
+
+			// check if window size has changed
+			int w, h;
+			glfwGetFramebufferSize(window, &w, &h);
+			if(w != screenWidth || h != screenHeight){
+				screenWidth = w;
+				screenHeight = h;
+				glViewport(0, 0, screenWidth, screenHeight);
+			}
 			
 			// Handle Timing
 			tp2 = std::chrono::system_clock::now();
@@ -136,19 +150,21 @@ public:
 			}
 
 			//handle mouse - use change in mouse position to rotate camera
-			double mouseX, mouseY = 0.0;
-			if(!cursorEnabled) glfwGetCursorPos(window, &mouseX, &mouseY);
-			double xoffset = mouseX - lastX;
-			double yoffset = lastY - mouseY; // reversed since y-coordinates go from bottom to top
-			lastX = mouseX;
-			lastY = mouseY;
+			if(cursorEnabled == false){
+				double mouseX, mouseY = 0.0;
+				glfwGetCursorPos(window, &mouseX, &mouseY);
+				double xoffset = mouseX - lastX;
+				double yoffset = lastY - mouseY; // reversed since y-coordinates go from bottom to top
+				lastX = mouseX;
+				lastY = mouseY;
 
-			float sensitivity = 5.0f;
-			xoffset *= sensitivity;
-			yoffset *= sensitivity;
+				float sensitivity = 5.0f;
+				xoffset *= sensitivity;
+				yoffset *= sensitivity;
 
-			camera.fYaw -= xoffset * fElapsedTime;
-			camera.fPitch += yoffset * fElapsedTime;
+				camera.fYaw -= xoffset * fElapsedTime;
+				camera.fPitch += yoffset * fElapsedTime;
+			}
 
 
 			//stop pitch going too high or low
@@ -190,9 +206,11 @@ public:
 					glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 					cursorEnabled = false;
 				} else {
-					glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 					cursorEnabled = true;
+					glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+					// unlock cursor
 				}
+				// stop further key presses
 			}
 			
 

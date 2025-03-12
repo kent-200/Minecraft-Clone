@@ -25,12 +25,11 @@ float vertices[6][4][3] = {
 
 // need seperate uv coordinates for each face due to orientation 
 float uv[6][4][2] = {
-
     // Front face
-    { {0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f} },
+    {{0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}},
 
     // Back face
-    { {0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f}},
 
     // Top face
     {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f},{0.0f, 1.0f}},
@@ -186,11 +185,6 @@ public:
                 }
             }
         }
-
-        std::cout << "Solid Mesh size: " << solidIndicies.size() << std::endl;
-        std::cout << "Transparent Mesh size: " << transparentIndicies.size() << std::endl;
-        
-
     }
 
     void addBlockFace(int x, int y, int z, int face, int type){
