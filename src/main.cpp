@@ -22,7 +22,7 @@ void errorCallback(int error, const char* description) {
 
 class GameEngine3D{
 private:
-	Camera camera = Camera(glm::vec3{0, 0, -5});
+	Camera camera = Camera(glm::vec3{0, 64, 0});
 	int windowWidth;
 	int windowHeight;
 	GLFWwindow* window;

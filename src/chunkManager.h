@@ -62,8 +62,6 @@ public:
             }
         }
 
-        this->placeBlock(glm::vec3(20, 20, 20), 0);
-        this->placeBlock(glm::vec3(20, 66, 20), 5);
         // change how this works
         for(int x = -renderDistance; x < renderDistance; x++){
             for(int y = 0; y < worldChunkHeight; y++){

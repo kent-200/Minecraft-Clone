@@ -1,6 +1,6 @@
 # Compiler and compiler flags
 CXX = g++
-CXXFLAGS = -Wall -Ilib/imgui -lglfw3 -lkernel32 -lopengl32 -lglu32 -lglew32 -lwinmm
+CXXFLAGS = -Wall -Ilib/imgui -Ilib -lglfw3 -lkernel32 -lopengl32 -lglu32 -lglew32 -lwinmm
 
 # Source files directory and wildcard for all .cpp files
 SRC_DIR = src

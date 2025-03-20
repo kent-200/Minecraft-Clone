@@ -3,6 +3,10 @@
 #include "chunk.h"
 #include "atlas.h"
 
+#define STB_PERLIN_IMPLEMENTATION
+#include "stb_perlin.h"
+
+
 
 /*
 Terrain Generator
@@ -35,11 +39,15 @@ implement ore generation
 class TerrainGenerator {
 private:
     Atlas * atlas;
-
+    int seed;
+    float frequency = 0.05f;
+    float amplitude = 5.0f;
 
 public:
-    TerrainGenerator(Atlas * atlas){
+    TerrainGenerator(Atlas * atlas, int seed = 1337){
         this->atlas = atlas;
+        this->seed = seed;
+
     }
 
     // generate stone with gass ontop
@@ -47,12 +55,25 @@ public:
         // top layer
         if(position.y == 3){
             // dirt with grass ontop
-            Chunk chunk = Chunk(position, atlas, 2);
+            Chunk chunk = Chunk(position, atlas, 0);
 
             // grass
             for(int x = 0; x < 16; x++){
                 for(int z = 0; z < 16; z++){
-                    chunk.setBlock(x, 15, z, 1);
+                    float nx = (x + position.x * 16) * frequency;
+                    float nz = (z + position.z * 16) * frequency;
+                    float height = stb_perlin_noise3_seed(nx, position.y, nz, 0, 0, 0, seed);
+
+                    // Normalize height to a suitable range
+                    int blockHeight = static_cast<int>((height + 1.0f) * amplitude); // Adjust scaling as needed
+
+                    // fill dirt
+                    for(int y = 0; y < blockHeight; y++){
+                        chunk.setBlock(x, y, z, 2);
+                    }
+
+                    // grass
+                    chunk.setBlock(x, blockHeight, z, 1);
                 }
             }
 
