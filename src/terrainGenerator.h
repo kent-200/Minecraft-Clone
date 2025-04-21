@@ -4,7 +4,7 @@
 #include "atlas.h"
 
 #define STB_PERLIN_IMPLEMENTATION
-#include "stb_perlin.h"
+#include "../lib/stb_perlin.h"
 
 
 

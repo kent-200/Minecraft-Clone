@@ -46,9 +46,14 @@ public:
 		// Set the error callback
 		glfwSetErrorCallback(errorCallback);
 
+
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+		#ifdef __APPLE__
+		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // Required on macOS
+		#endif
+
 
 
 		// Create a GLFW window
@@ -84,7 +89,11 @@ public:
 	
 		// Setup Platform/Renderer backends
 		ImGui_ImplGlfw_InitForOpenGL(window, true);
-		ImGui_ImplOpenGL3_Init("#version 130"); // GLSL version
+		#ifdef __APPLE__
+		ImGui_ImplOpenGL3_Init("#version 150");
+		#else
+		ImGui_ImplOpenGL3_Init("#version 130");
+		#endif
 	
 
 		
