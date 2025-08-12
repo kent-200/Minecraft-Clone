@@ -1,5 +1,5 @@
 #-----------------------------------------
-# Unified Makefile (no duplicate run, no circular deps)
+# Makefile 
 #-----------------------------------------
 
 # 1) Default goal

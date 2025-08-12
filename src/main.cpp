@@ -12,6 +12,7 @@ Last Update: 2/03/2025
 #include "chunkManager.h"
 #include "atlas.h"
 #include "terrainGenerator.h"
+#include "imguiWrapper.h"
 
 
 using namespace std;
@@ -30,6 +31,7 @@ private:
 	Atlas atlas;
 	TerrainGenerator terrainGenerator = TerrainGenerator(&atlas);
 	ChunkManager chunkManager = ChunkManager(terrainGenerator);
+	ImGuiWrapper imGui;
 
 
 public:
@@ -75,25 +77,8 @@ public:
 		}
 
 
-		// Initialize ImGui
-		IMGUI_CHECKVERSION();
-		ImGui::CreateContext(); 
-		ImGuiIO& io = ImGui::GetIO(); (void)io;
-		io.IniFilename = NULL;
-		// io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
-		// io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
-	
-		// Setup Dear ImGui style
-		ImGui::StyleColorsDark();
-		// ImGui::StyleColorsClassic();
-	
-		// Setup Platform/Renderer backends
-		ImGui_ImplGlfw_InitForOpenGL(window, true);
-		#ifdef __APPLE__
-		ImGui_ImplOpenGL3_Init("#version 150");
-		#else
-		ImGui_ImplOpenGL3_Init("#version 130");
-		#endif
+		// Initialize ImGui wrapper
+		imGui.init(window);
 	
 
 		
@@ -224,24 +209,9 @@ public:
 			
 
 
-			// Start the ImGui frame
-			ImGui_ImplOpenGL3_NewFrame();
-			ImGui_ImplGlfw_NewFrame();
-			ImGui::NewFrame();
-
-			// Set ImGui window position and size
-			ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Always);
-			ImGui::SetNextWindowSize(ImVec2(250, 80), ImGuiCond_Always);
-		
-			// Your ImGui UI code here
-			ImGui::Begin("Camera and Performance", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
-			ImGui::Text("Position: (%.2f, %.2f, %.2f)", camera.pos.x, camera.pos.y, camera.pos.z);
-			ImGui::Text("Yaw = %.2f, Pitch = %.2f", camera.fYaw, camera.fPitch);
-			ImGui::Text("FPS: %.1f (%.1f)",  average_fps, ImGui::GetIO().Framerate);
-			ImGui::End();
-			
-			// Rendering
-			ImGui::Render();
+			// Start the ImGui frame and render UI
+			imGui.newFrame();
+			imGui.renderUI(camera.pos, camera.fYaw, camera.fPitch, average_fps);
 
 			// Handle Frame Update
 
@@ -260,7 +230,7 @@ public:
 
 
 			// Render ImGui ontop
-			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+			imGui.render();
 
 
 			// Disable the vertex array functionality
@@ -272,9 +242,7 @@ public:
 				
 		}
 
-		ImGui_ImplOpenGL3_Shutdown();
-		ImGui_ImplGlfw_Shutdown();
-		ImGui::DestroyContext();
+		imGui.shutdown();
 
 
 		
